@@ -1,0 +1,38 @@
+{
+	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"dropzone_title": [
+		{
+			"declarations": [
+				"input dragActive"
+			],
+			"selectors": [
+				"dragActive"
+			],
+			"match": {
+				"dragActive=1": "Drop files here",
+				"dragActive=0": "Drag & drop files or click to upload"
+			}
+		}
+	],
+	"dropzone_subtitle": "All file types are supported!",
+	"upload_queue_title": "Upload queue",
+	"upload_queue_subtitle": [
+		{
+			"declarations": [
+				"input fileCount",
+				"input totalSize",
+				"local fileCountPlural = fileCount: plural"
+			],
+			"selectors": [
+				"fileCountPlural",
+				"totalSize"
+			],
+			"match": {
+				"fileCountPlural=other, totalSize=*": "{fileCount} files, {totalSize} total",
+				"fileCountPlural=one": "1 file, {totalSize}"
+			}
+		}
+	],
+	"clear_upload_queue": "Clear queue",
+	"upload_queue_empty": "The upload queue is empty."
+}
