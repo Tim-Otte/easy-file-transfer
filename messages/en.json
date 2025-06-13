@@ -34,5 +34,44 @@
 		}
 	],
 	"clear_upload_queue": "Clear queue",
-	"upload_queue_empty": "The upload queue is empty."
+	"upload_queue_empty": "The upload queue is empty.",
+	"rtc_status": [
+		{
+			"declarations": [
+				"input status"
+			],
+			"selectors": [
+				"status"
+			],
+			"match": {
+				"status=new": "Disconnected",
+				"status=connecting": "Connecting...",
+				"status=connected": "Connected",
+				"status=dataChannelOpen": "Data channel open",
+				"status=disconnected": "Disconnected",
+				"status=failed": "Connection failed",
+				"status=closed": "Connection closed"
+			}
+		}
+	],
+	"ping": "Ping: {ping} ms",
+	"download_queue_title": "Download queue",
+	"download_queue_subtitle": [
+		{
+			"declarations": [
+				"input fileCount",
+				"input totalSize",
+				"local fileCountPlural = fileCount: plural"
+			],
+			"selectors": [
+				"fileCountPlural",
+				"totalSize"
+			],
+			"match": {
+				"fileCountPlural=other, totalSize=*": "{fileCount} files, {totalSize} total",
+				"fileCountPlural=one": "1 file, {totalSize}"
+			}
+		}
+	],
+	"download_queue_empty": "The download queue is empty."
 }

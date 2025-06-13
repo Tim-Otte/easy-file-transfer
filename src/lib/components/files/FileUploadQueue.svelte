@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { m } from '../paraglide/messages.js';
+	import { m } from '$messages';
 	import { Trash } from '@lucide/svelte';
 	import { formatSize } from '$utils/file-size.js';
 	import { FileIcon } from '$components';

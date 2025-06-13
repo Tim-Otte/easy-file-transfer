@@ -5,10 +5,15 @@
 	import { replaceState } from '$app/navigation';
 	import { page } from '$app/state';
 	import { RtcClientStatus } from '$components';
+	import { FileItem, FileListMessage, type IFileTransferMessage } from '$filetransfer/messages';
+	import { FileDownloadQueue } from '$components';
+	import { Cloud } from '@lucide/svelte';
 
 	let localPeer: RTCReceiver | null;
 	let remotePeerId = $state<string | null>(null);
 	let connectionState = $state(RTCConnectionState.New);
+	let ping = $state(0);
+	let files = $state<Set<FileItem>>(new Set([]));
 
 	const connectToRemotePeer = (peerId: string) => {
 		if (localPeer) return;
@@ -16,8 +21,19 @@
 		localPeer = new RTCReceiver(peerId);
 		localPeer.on('connectionStateChanged', (state: RTCConnectionState) => {
 			connectionState = state;
-			if (state === RTCConnectionState.DataChannelOpen) {
-				localPeer!.sendMessage('test');
+		});
+		localPeer.on('ping', (latency: number) => {
+			ping = latency;
+		});
+		localPeer.on('message', (message: string) => {
+			try {
+				const msg = JSON.parse(message) as IFileTransferMessage;
+				if (msg.type === 'file-list') {
+					const fileListMessage = msg as FileListMessage;
+					files = new Set(fileListMessage.files);
+				}
+			} catch (error) {
+				console.error('Failed to parse file list message:', error);
 			}
 		});
 		localPeer.init();
@@ -41,13 +57,12 @@
 	<title>📥 Receive files</title>
 </svelte:head>
 
-<div class="flex flex-row gap-2">
-	<input
-		type="text"
-		placeholder="Enter remote peer ID"
-		bind:value={remotePeerId}
-		class="mb-4 w-full rounded-lg border p-2 dark:bg-zinc-800 dark:text-white"
-	/>
+<div class="mb-4 flex flex-row items-center justify-between font-[Space_Grotesk]">
+	<h1 class="text-3xl font-bold">
+		<Cloud size="35" class="mr-3 inline align-text-bottom text-blue-600" /> Easy file transfer
+	</h1>
 </div>
 
-<RtcClientStatus status={connectionState} />
+<FileDownloadQueue {files} />
+
+<RtcClientStatus status={connectionState} {ping} />

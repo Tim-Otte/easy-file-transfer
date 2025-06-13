@@ -16,7 +16,9 @@ const config = {
 		alias: {
 			$components: 'src/lib/components',
 			$utils: 'src/lib/utils',
-			$rtc: 'src/lib/webrtc'
+			$rtc: 'src/lib/webrtc',
+			$messages: 'src/lib/paraglide/messages.js',
+			$filetransfer: 'src/lib/file-transfer'
 		}
 	},
 };

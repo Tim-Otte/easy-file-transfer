@@ -34,5 +34,44 @@
 		}
 	],
 	"clear_upload_queue": "Leeren",
-	"upload_queue_empty": "Die Upload-Warteschlange ist leer."
+	"upload_queue_empty": "Die Upload-Warteschlange ist leer.",
+	"rtc_status": [
+		{
+			"declarations": [
+				"input status"
+			],
+			"selectors": [
+				"status"
+			],
+			"match": {
+				"status=new": "Getrennt",
+				"status=connecting": "Verbinde...",
+				"status=connected": "Verbunden",
+				"status=dataChannelOpen": "Datenkanal offen",
+				"status=disconnected": "Getrennt",
+				"status=failed": "Verbindunsfehler",
+				"status=closed": "Verbindung beendet"
+			}
+		}
+	],
+	"ping": "Ping: {ping} ms",
+	"download_queue_title": "Download Warteschlange",
+	"download_queue_subtitle": [
+		{
+			"declarations": [
+				"input fileCount",
+				"input totalSize",
+				"local fileCountPlural = fileCount: plural"
+			],
+			"selectors": [
+				"fileCountPlural",
+				"totalSize"
+			],
+			"match": {
+				"fileCountPlural=other, totalSize=*": "{fileCount} Dateien, {totalSize} insg.",
+				"fileCountPlural=one": "1 Datei, {totalSize}"
+			}
+		}
+	],
+	"download_queue_empty": "Die Download-Warteschlange ist leer."
 }
