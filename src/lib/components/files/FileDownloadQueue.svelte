@@ -1,16 +1,17 @@
 <script lang="ts">
 	import { m } from '$messages';
-	import { Trash } from '@lucide/svelte';
 	import { formatSize } from '$utils/file-size.js';
 	import { FileIcon } from '$components';
 	import type { FileItem } from '$filetransfer/messages';
+	import { Download } from '@lucide/svelte';
 
 	interface Props {
 		files: Set<FileItem>;
+		downloadFile: (fileName: string) => void;
 	}
 
-	let { files = $bindable() }: Props = $props();
-	let totalFileSize = $derived(files.values().reduce((sum, file) => sum + file.size, 0));
+	let { files = $bindable(), downloadFile }: Props = $props();
+	let totalFileSize = $derived(Array.from(files).reduce((sum, file) => sum + file.size, 0));
 </script>
 
 <div class="mt-4 flex items-end justify-between">
@@ -36,6 +37,13 @@
 					{formatSize(file.size)}
 				</div>
 			</div>
+			<button
+				class="cursor-pointer rounded p-2 text-green-500 transition-colors duration-200 hover:bg-zinc-800"
+				onclick={() => downloadFile(file.name)}
+				aria-label="Download file"
+			>
+				<Download class="h-5 w-5" />
+			</button>
 		</div>
 	{:else}
 		<div class="text-gray-500 dark:text-gray-400 text-sm">

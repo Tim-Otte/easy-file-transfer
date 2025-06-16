@@ -1,0 +1,15 @@
+{
+    "compilerOptions": {
+        "allowJs": true,
+        "checkJs": false,
+        "esModuleInterop": true,
+        "forceConsistentCasingInFileNames": true,
+        "skipLibCheck": true,
+        "module": "preserve",
+        "moduleResolution": "bundler",
+        "outDir": "dist"
+    },
+    "files": [
+        "src/server.ts"
+    ]
+}

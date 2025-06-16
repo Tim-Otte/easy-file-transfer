@@ -19,14 +19,15 @@ type RTCClientEvents = {
     message: (message: string) => void;
 };
 
+type RTCClientEventDict = {
+    [K in keyof RTCClientEvents]: RTCClientEvents[K][]
+};
+
 export class RTCClient {
     protected signalingChannel: SignalingClient;
     protected connection: RTCPeerConnection;
     protected fileChannel: RTCDataChannel | null = null;
-    private signalingStateHandlers: ((isOnline: boolean) => void)[] = [];
-    private connectionStateHandlers: ((state: RTCConnectionState) => void)[] = [];
-    private pingHandlers: ((latency: number) => void)[] = [];
-    private messageHandlers: ((message: string) => void)[] = [];
+    private eventHandlers: RTCClientEventDict;
     public isSignalingOnline: boolean = false;
     public connectionState: RTCConnectionState;
     private pingTimestamp: Date | null = null;
@@ -34,8 +35,20 @@ export class RTCClient {
 
     constructor(peerId: string | null = null) {
         this.signalingChannel = new SignalingClient(peerId);
-        this.connection = new RTCPeerConnection();
+        this.connection = new RTCPeerConnection({
+            iceServers: [
+                {
+                    urls: ['stun:stun.cloudflare.com:3478', 'stun:stun.cloudflare.com:53']
+                }
+            ]
+        });
         this.connectionState = RTCConnectionState.New;
+        this.eventHandlers = {
+            signalingStateChanged: [],
+            connectionStateChanged: [],
+            ping: [],
+            message: []
+        };
     }
 
     protected updateStatus(state: RTCConnectionState) {
@@ -50,8 +63,6 @@ export class RTCClient {
         this.connection.onicecandidate = async (event) => {
             if (event.candidate) {
                 this.signalingChannel.sendIceCandidate(event.candidate);
-
-                this.updateStatus(RTCConnectionState.Connecting);
             }
         };
 
@@ -86,10 +97,13 @@ export class RTCClient {
         };
     }
 
-    sendMessage(message: string) {
+    sendMessage<T>(message: T) {
         if (this.fileChannel?.readyState === 'open') {
-            this.fileChannel.send(message);
-            console.debug('Sent message:', message);
+            if (typeof message === 'string') {
+                this.fileChannel.send(message);
+            } else {
+                this.fileChannel.send(JSON.stringify(message));
+            }
         } else {
             console.warn('Data channel is not open, cannot send message');
         }
@@ -144,40 +158,16 @@ export class RTCClient {
     }
 
     on<K extends keyof RTCClientEvents>(event: K, callback: RTCClientEvents[K]) {
-        switch (event) {
-            case 'signalingStateChanged':
-                this.signalingStateHandlers.push(callback as (isOnline: boolean) => void);
-                break;
-            case 'connectionStateChanged':
-                this.connectionStateHandlers.push(callback as (state: RTCConnectionState) => void);
-                break;
-            case 'ping':
-                this.pingHandlers.push(callback as (latency: number) => void);
-                break;
-            case 'message':
-                this.messageHandlers.push(callback as (message: string) => void);
-                break;
-            default:
-                throw new Error(`Event ${event} is not supported`);
-        }
+        this.eventHandlers[event].push(callback);
     }
 
-    protected emit<K extends keyof RTCClientEvents>(event: K, ...args: Parameters<RTCClientEvents[K]>) {
-        switch (event) {
-            case 'signalingStateChanged':
-                this.signalingStateHandlers.forEach(handler => handler(...args as [boolean]));
-                break;
-            case 'connectionStateChanged':
-                this.connectionStateHandlers.forEach(handler => handler(...args as [RTCConnectionState]));
-                break;
-            case 'ping':
-                this.pingHandlers.forEach(handler => handler(...args as [number]));
-                break;
-            case 'message':
-                this.messageHandlers.forEach(handler => handler(...args as [string]));
-                break;
-            default:
-                throw new Error(`Event ${event} is not supported`);
+    protected emit<K extends keyof RTCClientEvents>(event: K, ...args: Parameters<RTCClientEvents[K]> extends infer P
+        ? P extends [...unknown[]]
+        ? P
+        : never
+        : never) {
+        for (const fn of this.eventHandlers[event]) {
+            (fn as (...a: typeof args) => void)(...args);
         }
     }
 };

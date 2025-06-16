@@ -9,7 +9,7 @@
 	}
 
 	let { files = $bindable() }: Props = $props();
-	let totalFileSize = $derived(files.values().reduce((sum, file) => sum + file.size, 0));
+	let totalFileSize = $derived(Array.from(files).reduce((sum, file) => sum + file.size, 0));
 </script>
 
 <div class="mt-4 flex items-end justify-between">

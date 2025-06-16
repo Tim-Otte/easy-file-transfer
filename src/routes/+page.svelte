@@ -1,10 +1,17 @@
 <script lang="ts">
 	import { FileUpload, FileUploadQueue, RtcClientStatus, ShareUrl } from '$components';
-	import { FileItem, FileListMessage } from '$filetransfer/messages';
+	import {
+		FileChunkMessage,
+		FileItem,
+		FileListMessage,
+		RequestDownloadMessage,
+		type IFileTransferMessage
+	} from '$filetransfer/messages';
 	import { RTCConnectionState } from '$rtc/base-client';
 	import { RTCSender } from '$rtc/sender';
 	import { Cloud } from '@lucide/svelte';
 	import { onMount } from 'svelte';
+	import { CHUNK_SIZE } from '$utils/constants';
 
 	let files = $state.raw(new Set<File>());
 	let localPeer: RTCSender | null = null;
@@ -21,12 +28,8 @@
 	const initPeerConnection = () => {
 		connectionState = RTCConnectionState.New;
 		localPeer = new RTCSender();
-		localPeer.on('signalingStateChanged', (isOnline: boolean) => {
-			if (isOnline) {
-				shareUrl = `${location.origin}/receive?i=${localPeer!.peerId}`;
-			} else {
-				shareUrl = null;
-			}
+		localPeer.on('signalingStateChanged', (isOnline) => {
+			shareUrl = isOnline ? `${location.origin}/receive?i=${localPeer!.peerId}` : null;
 		});
 		localPeer.on('connectionStateChanged', (state: RTCConnectionState) => {
 			connectionState = state;
@@ -36,8 +39,21 @@
 				sendFileList();
 			}
 		});
-		localPeer.on('ping', (latency: number) => {
-			ping = latency;
+		localPeer.on('ping', (latency: number) => (ping = latency));
+		localPeer.on('message', (message: string) => {
+			try {
+				const msg = JSON.parse(message) as IFileTransferMessage;
+				if (msg.type === 'request-download') {
+					const fileListMessage = msg as RequestDownloadMessage;
+					const requestedFiles = Array.from(files).filter((x) =>
+						fileListMessage.fileNames.includes(x.name)
+					);
+
+					requestedFiles.forEach(sendFile);
+				}
+			} catch (error) {
+				console.error('Failed to parse file list message:', error);
+			}
 		});
 		localPeer.init();
 	};
@@ -50,7 +66,27 @@
 			.map((file) => new FileItem(file.name, file.size, file.type, file.lastModified))
 			.toArray();
 
-		localPeer.sendMessage(JSON.stringify(new FileListMessage(fileList)));
+		localPeer.sendMessage(new FileListMessage(fileList));
+	};
+
+	const sendFile = async (file: File) => {
+		const totalChunkCount = Math.ceil(file.size / CHUNK_SIZE);
+
+		for (let chunkIndex = 0; chunkIndex < totalChunkCount; chunkIndex++) {
+			const chunk = file.slice(
+				chunkIndex * CHUNK_SIZE,
+				Math.min((chunkIndex + 1) * CHUNK_SIZE, file.size)
+			);
+			const chunkBuffer = await chunk.arrayBuffer();
+			localPeer?.sendMessage(
+				new FileChunkMessage(
+					file.name,
+					chunkIndex,
+					totalChunkCount,
+					Object.values(new Uint8Array(chunkBuffer))
+				)
+			);
+		}
 	};
 
 	onMount(() => {

@@ -8,7 +8,7 @@ export class FileItem {
 }
 
 export interface IFileTransferMessage {
-    type: 'file-list';
+    type: 'file-list' | 'request-download' | 'file-chunk';
 }
 
 export class FileListMessage implements IFileTransferMessage {
@@ -16,5 +16,24 @@ export class FileListMessage implements IFileTransferMessage {
 
     constructor(
         public files: FileItem[]
+    ) { }
+}
+
+export class RequestDownloadMessage implements IFileTransferMessage {
+    type = "request-download" as const;
+
+    constructor(
+        public fileNames: string[]
+    ) { }
+}
+
+export class FileChunkMessage implements IFileTransferMessage {
+    type = "file-chunk" as const;
+
+    constructor(
+        public fileName: string,
+        public index: number,
+        public totalCount: number,
+        public data: number[]
     ) { }
 }

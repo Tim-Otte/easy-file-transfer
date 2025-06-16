@@ -1,13 +1,10 @@
-import type { HttpServer } from 'vite';
 import { WebSocket, WebSocketServer } from 'ws';
 
-let started = false;
-
-interface ISignalingMessage {
+export interface ISignalingMessage {
     type: 'register' | 'offer' | 'ice-candidate' | 'set-description';
 }
 
-class RegisterSignalingMessage implements ISignalingMessage {
+export class RegisterSignalingMessage implements ISignalingMessage {
     type = 'register' as const;
     id: string;
 
@@ -16,7 +13,7 @@ class RegisterSignalingMessage implements ISignalingMessage {
     }
 }
 
-class IceCandidateSignalingMessage implements ISignalingMessage {
+export class IceCandidateSignalingMessage implements ISignalingMessage {
     type = 'ice-candidate' as const;
     from: string;
     to: string;
@@ -29,7 +26,7 @@ class IceCandidateSignalingMessage implements ISignalingMessage {
     }
 }
 
-class OfferSignalingMessage implements ISignalingMessage {
+export class OfferSignalingMessage implements ISignalingMessage {
     type = 'offer' as const;
     from: string;
     to: string;
@@ -42,7 +39,7 @@ class OfferSignalingMessage implements ISignalingMessage {
     }
 }
 
-class SetDescriptionSignalingMessage implements ISignalingMessage {
+export class SetDescriptionSignalingMessage implements ISignalingMessage {
     type = 'set-description' as const;
     from: string;
     to: string;
@@ -55,7 +52,7 @@ class SetDescriptionSignalingMessage implements ISignalingMessage {
     }
 }
 
-function setupSignalingServer(wss: WebSocketServer) {
+export function setupSignalingServer(wss: WebSocketServer) {
     const peers = new Map<string, WebSocket>();
 
     wss.on('connection', (client) => {
@@ -98,25 +95,3 @@ function setupSignalingServer(wss: WebSocketServer) {
         });
     });
 }
-
-function startSignalingServer(server: HttpServer): void {
-    if (started) return;
-    started = true;
-
-    const wss = new WebSocketServer({ noServer: true });
-
-    setupSignalingServer(wss);
-
-    server.on('upgrade', (request, socket, head) => {
-        if (!request.url.startsWith('/signaling')) return;
-
-        socket.on('error', console.error);
-
-        wss.handleUpgrade(request, socket, head, (ws: WebSocket) => {
-            wss.emit('connection', ws, request);
-        });
-    });
-}
-
-export { startSignalingServer, RegisterSignalingMessage, IceCandidateSignalingMessage, OfferSignalingMessage, SetDescriptionSignalingMessage };
-export type { ISignalingMessage }

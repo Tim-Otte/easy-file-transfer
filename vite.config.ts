@@ -2,7 +2,7 @@ import { paraglideVitePlugin } from '@inlang/paraglide-js';
 import tailwindcss from '@tailwindcss/vite';
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig, type ViteDevServer } from 'vite';
-import { startSignalingServer } from './src/websocket/signaling-server';
+import { startSignalingServer } from './src/websocket/dev-server';
 
 const webSocketServer = {
 	name: 'webSocketServer',
