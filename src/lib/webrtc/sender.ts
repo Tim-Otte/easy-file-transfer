@@ -1,3 +1,4 @@
+import { CONTROL_CHANNEL_LABEL, FILE_CHANNEL_LABEL } from "$utils/constants";
 import { RTCClient } from "./base-client";
 
 export class RTCSender extends RTCClient {
@@ -20,8 +21,18 @@ export class RTCSender extends RTCClient {
         this.connection.ondatachannel = (event) => {
             console.debug('Data channel received:', event.channel);
 
-            this.fileChannel = event.channel;
-            this.initFileChannel();
+            if (event.channel) {
+                if (event.channel.label === CONTROL_CHANNEL_LABEL) {
+                    this.controlChannel = event.channel;
+
+                    if (this.fileChannel) this.initDataChannels();
+                }
+                else if (event.channel.label === FILE_CHANNEL_LABEL) {
+                    this.fileChannel = event.channel;
+
+                    if (this.controlChannel) this.initDataChannels();
+                }
+            }
         };
 
         // Initialize the signaling channel

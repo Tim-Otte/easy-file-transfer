@@ -16,7 +16,8 @@ type RTCClientEvents = {
     signalingStateChanged: (isOnline: boolean) => void;
     connectionStateChanged: (state: RTCConnectionState) => void;
     ping: (latency: number) => void;
-    message: (message: string) => void;
+    controlMessage: (message: string) => void;
+    fileMessage: (message: string) => void;
 };
 
 type RTCClientEventDict = {
@@ -26,6 +27,7 @@ type RTCClientEventDict = {
 export class RTCClient {
     protected signalingChannel: SignalingClient;
     protected connection: RTCPeerConnection;
+    protected controlChannel: RTCDataChannel | null = null;
     protected fileChannel: RTCDataChannel | null = null;
     private eventHandlers: RTCClientEventDict;
     public isSignalingOnline: boolean = false;
@@ -47,7 +49,8 @@ export class RTCClient {
             signalingStateChanged: [],
             connectionStateChanged: [],
             ping: [],
-            message: []
+            controlMessage: [],
+            fileMessage: []
         };
     }
 
@@ -91,42 +94,53 @@ export class RTCClient {
 
         // Initialize the signaling channel
         this.signalingChannel.onIceCandidate = (candidate) => {
-            console.debug('Received ICE candidate:', candidate);
+            if (this.connectionState === RTCConnectionState.DataChannelOpen) {
+                console.warn('Rejected ICE candidate')
+            } else {
+                console.debug('Received ICE candidate:', candidate);
 
-            this.connection.addIceCandidate(candidate);
+                this.connection.addIceCandidate(candidate);
+            }
         };
     }
 
-    sendMessage<T>(message: T) {
-        if (this.fileChannel?.readyState === 'open') {
+    private sendMessageToChannel<T>(channel: RTCDataChannel | null, message: T) {
+        if (channel?.readyState === 'open') {
             if (typeof message === 'string') {
-                this.fileChannel.send(message);
+                channel.send(message);
             } else {
-                this.fileChannel.send(JSON.stringify(message));
+                channel.send(JSON.stringify(message));
             }
         } else {
-            console.warn('Data channel is not open, cannot send message');
+            console.warn(`Channel '${channel?.label}' is not open, cannot send message`);
         }
     }
 
-    protected initFileChannel() {
-        if (!this.fileChannel) return;
+    sendControlMessage<T>(message: T) {
+        this.sendMessageToChannel(this.controlChannel, message);
+    }
 
-        this.fileChannel.onopen = () => {
-            console.debug('Data channel is open');
-            this.updateStatus(RTCConnectionState.DataChannelOpen);
+    sendFileMessage<T>(message: T) {
+        this.sendMessageToChannel(this.fileChannel, message);
+    }
+
+    protected initDataChannels() {
+        if (!this.controlChannel) return;
+
+        this.controlChannel.onopen = () => {
+            console.debug('Control channel is open');
 
             this.pingInterval = setInterval(() => {
                 if (this.pingTimestamp) return;
 
                 this.pingTimestamp = new Date();
-                this.sendMessage('ping');
+                this.sendControlMessage('ping');
             }, PING_INTERVAL);
         };
 
-        this.fileChannel.onmessage = (event) => {
+        this.controlChannel.onmessage = (event) => {
             if (event.data === 'ping') {
-                this.sendMessage('pong');
+                this.sendControlMessage('pong');
                 return;
             }
 
@@ -139,15 +153,37 @@ export class RTCClient {
             }
 
             console.debug('Received message:', event.data);
-            this.emit('message', event.data);
+            this.emit('controlMessage', event.data);
+        };
+
+        this.controlChannel.onclose = () => {
+            console.debug('Control channel is closed');
+
+            if (this.pingInterval) {
+                clearInterval(this.pingInterval);
+            }
+            this.connection.close();
+            this.updateStatus(RTCConnectionState.Closed);
+        };
+
+        this.controlChannel.onerror = (error) => {
+            console.error('Control channel error:', error);
+        };
+
+        if (!this.fileChannel) return;
+
+        this.fileChannel.onopen = () => {
+            console.debug('Data channel is open');
+            this.updateStatus(RTCConnectionState.DataChannelOpen);
+        };
+
+        this.fileChannel.onmessage = (event) => {
+            this.emit('fileMessage', event.data);
         };
 
         this.fileChannel.onclose = () => {
             console.debug('Data channel is closed');
 
-            if (this.pingInterval) {
-                clearInterval(this.pingInterval);
-            }
             this.connection.close();
             this.updateStatus(RTCConnectionState.Closed);
         };

@@ -1,56 +1,47 @@
 import { WebSocket, WebSocketServer } from 'ws';
 
-export interface ISignalingMessage {
-    type: 'register' | 'offer' | 'ice-candidate' | 'set-description';
-}
-
-export class RegisterSignalingMessage implements ISignalingMessage {
+export class RegisterSignalingMessage {
     type = 'register' as const;
-    id: string;
-
-    constructor(id: string) {
-        this.id = id;
-    }
+    constructor(
+        public id: string
+    ) { }
 }
 
-export class IceCandidateSignalingMessage implements ISignalingMessage {
+export class RegisterResultSignalingMessage {
+    type = 'register-result' as const;
+    constructor(
+        public success: boolean
+    ) { }
+}
+
+export class IceCandidateSignalingMessage {
     type = 'ice-candidate' as const;
-    from: string;
-    to: string;
-    candidate: RTCIceCandidateInit;
-
-    constructor(from: string, to: string, candidate: RTCIceCandidateInit) {
-        this.from = from;
-        this.to = to;
-        this.candidate = candidate;
-    }
+    constructor(
+        public from: string,
+        public to: string,
+        public candidate: RTCIceCandidateInit
+    ) { }
 }
 
-export class OfferSignalingMessage implements ISignalingMessage {
+export class OfferSignalingMessage {
     type = 'offer' as const;
-    from: string;
-    to: string;
-    offer: RTCSessionDescriptionInit;
-
-    constructor(from: string, to: string, offer: RTCSessionDescriptionInit) {
-        this.from = from;
-        this.to = to;
-        this.offer = offer;
-    }
+    constructor(
+        public from: string,
+        public to: string,
+        public offer: RTCSessionDescriptionInit
+    ) { }
 }
 
-export class SetDescriptionSignalingMessage implements ISignalingMessage {
+export class SetDescriptionSignalingMessage {
     type = 'set-description' as const;
-    from: string;
-    to: string;
-    description: RTCSessionDescription;
-
-    constructor(from: string, to: string, offer: RTCSessionDescription) {
-        this.from = from;
-        this.to = to;
-        this.description = offer;
-    }
+    constructor(
+        public from: string,
+        public to: string,
+        public description: RTCSessionDescription
+    ) { }
 }
+
+export type SignalingMessage = RegisterSignalingMessage | RegisterResultSignalingMessage | IceCandidateSignalingMessage | OfferSignalingMessage | SetDescriptionSignalingMessage;
 
 export function setupSignalingServer(wss: WebSocketServer) {
     const peers = new Map<string, WebSocket>();
@@ -58,31 +49,32 @@ export function setupSignalingServer(wss: WebSocketServer) {
     wss.on('connection', (client) => {
         let peerId: string;
 
-        client.on('message', (message) => {
+        client.on('message', (data) => {
             try {
-                const data = JSON.parse(message.toString()) as ISignalingMessage;
+                const message = JSON.parse(data.toString()) as SignalingMessage;
 
-                if (data.type === 'register') {
-                    const registerData = data as RegisterSignalingMessage;
-                    peerId = registerData.id;
-                    peers.set(peerId, client);
-                }
-                else if (data.type === 'offer') {
-                    const connectData = data as OfferSignalingMessage;
-                    if (peers.has(connectData.to)) {
-                        peers.get(connectData.to)?.send(message.toString());
+                if (message.type === 'register') {
+                    const result = new RegisterResultSignalingMessage(!peers.has(message.id));
+                    client.send(JSON.stringify(result));
+
+                    if (result.success) {
+                        peerId = message.id;
+                        peers.set(peerId, client);
                     }
                 }
-                else if (data.type === 'ice-candidate') {
-                    const connectData = data as IceCandidateSignalingMessage;
-                    if (peers.has(connectData.to)) {
-                        peers.get(connectData.to)?.send(message.toString());
+                else if (message.type === 'offer') {
+                    if (peers.has(message.to)) {
+                        peers.get(message.to)?.send(data.toString());
                     }
                 }
-                else if (data.type === 'set-description') {
-                    const connectData = data as SetDescriptionSignalingMessage;
-                    if (peers.has(connectData.to)) {
-                        peers.get(connectData.to)?.send(message.toString());
+                else if (message.type === 'ice-candidate') {
+                    if (peers.has(message.to)) {
+                        peers.get(message.to)?.send(data.toString());
+                    }
+                }
+                else if (message.type === 'set-description') {
+                    if (peers.has(message.to)) {
+                        peers.get(message.to)?.send(data.toString());
                     }
                 }
             } catch (error) {

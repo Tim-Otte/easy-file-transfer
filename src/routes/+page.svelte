@@ -35,7 +35,7 @@
 		});
 		localPeer.on('connectionStateChanged', (state) => (connectionState = state));
 		localPeer.on('ping', (latency: number) => (ping = latency));
-		localPeer.on('message', (message: string) => {
+		localPeer.on('controlMessage', (message: string) => {
 			try {
 				const msg = JSON.parse(message) as FileTransferMessage;
 				if (msg.type === 'request-download') {
@@ -60,7 +60,7 @@
 			.map((item) => new FileItem(item.id, item.file))
 			.toArray();
 
-		localPeer.sendMessage(new FileListMessage(fileList));
+		localPeer.sendControlMessage(new FileListMessage(fileList));
 	};
 
 	const sendFile = async (item: FileListItem) => {
@@ -72,7 +72,7 @@
 				Math.min((chunkIndex + 1) * CHUNK_SIZE, item.file.size)
 			);
 			const chunkBuffer = await chunk.arrayBuffer();
-			localPeer?.sendMessage(
+			localPeer?.sendFileMessage(
 				new FileChunkMessage(item.id, chunkIndex, Object.values(new Uint8Array(chunkBuffer)))
 			);
 		}

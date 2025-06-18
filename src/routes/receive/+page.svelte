@@ -28,12 +28,20 @@
 		localPeer = new RTCReceiver(peerId);
 		localPeer.on('connectionStateChanged', (state) => (connectionState = state));
 		localPeer.on('ping', (latency) => (ping = latency));
-		localPeer.on('message', (message: string) => {
+		localPeer.on('controlMessage', (message: string) => {
 			try {
 				const msg = JSON.parse(message) as FileTransferMessage;
 				if (msg.type === 'file-list') {
 					files = new Set(msg.files);
-				} else if (msg.type === 'file-chunk') {
+				}
+			} catch (error) {
+				console.error('Failed to parse file transfer message:', error);
+			}
+		});
+		localPeer.on('fileMessage', (message: string) => {
+			try {
+				const msg = JSON.parse(message) as FileTransferMessage;
+				if (msg.type === 'file-chunk') {
 					const { fileId, ...chunk }: { fileId: string } & ChunkData = msg;
 					const fileData = Array.from(files).find((x) => x.id === fileId);
 
@@ -67,7 +75,7 @@
 
 	const requestFileDownload = (id: string) => {
 		const requestDownloadMsg = new RequestDownloadMessage([id]);
-		localPeer?.sendMessage(requestDownloadMsg);
+		localPeer?.sendControlMessage(requestDownloadMsg);
 	};
 
 	const downloadFile = (data: Uint8Array, type: string, fileName: string) => {

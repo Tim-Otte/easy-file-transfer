@@ -1,4 +1,4 @@
-import { RegisterSignalingMessage, IceCandidateSignalingMessage, OfferSignalingMessage, type ISignalingMessage, SetDescriptionSignalingMessage } from "../../websocket/signaling-server";
+import { IceCandidateSignalingMessage, OfferSignalingMessage, RegisterSignalingMessage, SetDescriptionSignalingMessage, type SignalingMessage } from "../../websocket/signaling-server";
 
 export class SignalingClient {
     socket: WebSocket;
@@ -12,16 +12,11 @@ export class SignalingClient {
 
     constructor(remoteId: string | null = null) {
         this.socket = new WebSocket(location.origin.replace('http', 'ws') + '/signaling');
-        this.localId = crypto.randomUUID();
         this.remoteId = remoteId;
+        this.localId = this.generateNewLocalId();
 
         this.socket.onopen = () => {
-
             this.socket.send(JSON.stringify(new RegisterSignalingMessage(this.localId)));
-
-            if (this.onSocketOpen) {
-                this.onSocketOpen();
-            }
         }
 
         this.socket.onclose = () => {
@@ -34,40 +29,44 @@ export class SignalingClient {
 
         this.socket.onmessage = (event) => {
             try {
-                const data = JSON.parse(event.data) as ISignalingMessage;
+                const message = JSON.parse(event.data) as SignalingMessage;
 
-                if (data.type === 'ice-candidate') {
-                    const iceCandidateData = data as IceCandidateSignalingMessage;
+                if (message.type === 'register-result') {
+                    if (message.success) {
+                        if (this.onSocketOpen) {
+                            this.onSocketOpen();
+                        }
+                    } else {
+                        this.localId = this.generateNewLocalId();
+                        this.socket.send(JSON.stringify(new RegisterSignalingMessage(this.localId)));
+                    }
+                }
+                else if (message.type === 'ice-candidate') {
                     if (this.onIceCandidate) {
-                        this.onIceCandidate(iceCandidateData.candidate);
+                        this.onIceCandidate(message.candidate);
                     }
 
                     if (!remoteId) {
-                        this.remoteId = iceCandidateData.from;
+                        this.remoteId = message.from;
                     }
-                    return;
                 }
-                else if (data.type === 'offer') {
-                    const offerData = data as OfferSignalingMessage;
+                else if (message.type === 'offer') {
                     if (this.onOffer) {
-                        this.onOffer(offerData.offer);
+                        this.onOffer(message.offer);
                     }
 
                     if (!remoteId) {
-                        this.remoteId = offerData.from;
+                        this.remoteId = message.from;
                     }
-                    return;
                 }
-                else if (data.type === 'set-description') {
-                    const setDescriptionData = data as SetDescriptionSignalingMessage;
+                else if (message.type === 'set-description') {
                     if (this.onReceivedRemoteDescription) {
-                        this.onReceivedRemoteDescription(setDescriptionData.description);
+                        this.onReceivedRemoteDescription(message.description);
                     }
 
                     if (!remoteId) {
-                        this.remoteId = setDescriptionData.from;
+                        this.remoteId = message.from;
                     }
-                    return;
                 }
             } catch (error) {
                 console.error(error);
@@ -77,6 +76,10 @@ export class SignalingClient {
 
     get peerId() {
         return this.localId;
+    }
+
+    private generateNewLocalId() {
+        return crypto.randomUUID().split('-')[4];
     }
 
     sendIceCandidate(candidate: RTCIceCandidateInit) {

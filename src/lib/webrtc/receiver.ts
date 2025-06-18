@@ -1,3 +1,4 @@
+import { CONTROL_CHANNEL_LABEL, FILE_CHANNEL_LABEL } from "$utils/constants";
 import { RTCClient } from "./base-client";
 
 export class RTCReceiver extends RTCClient {
@@ -12,10 +13,16 @@ export class RTCReceiver extends RTCClient {
     init() {
         super.init();
 
+        // Initialize the control channel
+        this.controlChannel = this.connection.createDataChannel(CONTROL_CHANNEL_LABEL);
+        this.controlChannel.binaryType = 'arraybuffer';
+
         // Initialize the file channel
-        this.fileChannel = this.connection.createDataChannel('fileChannel');
+        this.fileChannel = this.connection.createDataChannel(FILE_CHANNEL_LABEL);
         this.fileChannel.binaryType = 'arraybuffer';
-        this.initFileChannel();
+
+        // Add events to both channels
+        this.initDataChannels();
 
         // Initialize the signaling channel
         this.signalingChannel.onOffer = async (offer) => {
