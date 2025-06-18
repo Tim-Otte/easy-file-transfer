@@ -1,20 +1,31 @@
 <script lang="ts">
+	import { FileListItem } from '$filetransfer/file-list-item';
 	import { m } from '$messages';
 	import { ArrowDown, Upload } from '@lucide/svelte';
 
 	interface Props {
-		files: Set<File>;
+		files: Set<FileListItem>;
 	}
 
 	let { files = $bindable() }: Props = $props();
 	let dragActive = $state(false);
 
+	const getNewFileId = () => {
+		do {
+			let id = crypto.randomUUID().split('-')[4];
+			if (!Array.from(files).find((x) => x.id === id)) return id;
+		} while (true);
+	};
+
 	const handleFiles = (selected: FileList | File[]) => {
 		files = new Set([
 			...files,
-			...Array.from(selected).filter(
-				(file) => !files.values().find((f) => f.name === file.name && f.size === file.size)
-			)
+			...Array.from(selected)
+				.filter(
+					(file) =>
+						!files.values().find((i) => i.file.name === file.name && i.file.size === file.size)
+				)
+				.map((file) => new FileListItem(getNewFileId(), file))
 		]);
 	};
 

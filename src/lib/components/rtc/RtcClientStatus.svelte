@@ -1,7 +1,7 @@
 <script lang="ts">
+	import { RtcClientStatusIcon } from '$components';
 	import { m } from '$messages';
 	import { RTCConnectionState } from '$rtc/base-client';
-	import { RtcClientStatusIcon } from '$components';
 	import RtcClientStatusPingIcon from './RtcClientStatusPingIcon.svelte';
 
 	type Props = {

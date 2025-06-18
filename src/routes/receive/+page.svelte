@@ -1,27 +1,26 @@
 <script lang="ts">
-	import { RTCConnectionState } from '$rtc/base-client';
-	import { RTCReceiver } from '$rtc/receiver';
-	import { onMount, tick } from 'svelte';
 	import { replaceState } from '$app/navigation';
 	import { page } from '$app/state';
-	import { RtcClientStatus } from '$components';
+	import { FileDownloadQueue, RtcClientStatus } from '$components';
 	import {
-		FileChunkMessage,
 		FileItem,
-		FileListMessage,
 		RequestDownloadMessage,
-		type IFileTransferMessage
+		type FileTransferMessage
 	} from '$filetransfer/messages';
-	import { FileDownloadQueue } from '$components';
-	import { Cloud } from '@lucide/svelte';
+	import { RTCConnectionState } from '$rtc/base-client';
+	import { RTCReceiver } from '$rtc/receiver';
 	import { CHUNK_SIZE } from '$utils/constants';
+	import { Cloud } from '@lucide/svelte';
+	import { onMount, tick } from 'svelte';
+
+	type ChunkData = { index: number; data: number[] };
 
 	let localPeer: RTCReceiver | null;
 	let remotePeerId = $state<string | null>(null);
 	let connectionState = $state(RTCConnectionState.New);
 	let ping = $state(0);
 	let files = $state<Set<FileItem>>(new Set([]));
-	let chunks: { [fileName: string]: { index: number; data: number[] }[] } = {};
+	let chunks: { [fileName: string]: ChunkData[] } = {};
 
 	const connectToRemotePeer = (peerId: string) => {
 		if (localPeer) return;
@@ -31,39 +30,43 @@
 		localPeer.on('ping', (latency) => (ping = latency));
 		localPeer.on('message', (message: string) => {
 			try {
-				const msg = JSON.parse(message) as IFileTransferMessage;
+				const msg = JSON.parse(message) as FileTransferMessage;
 				if (msg.type === 'file-list') {
-					const fileListMessage = msg as FileListMessage;
-					files = new Set(fileListMessage.files);
+					files = new Set(msg.files);
 				} else if (msg.type === 'file-chunk') {
-					const { index, data, fileName, totalCount } = msg as FileChunkMessage;
+					const { fileId, ...chunk }: { fileId: string } & ChunkData = msg;
+					const fileData = Array.from(files).find((x) => x.id === fileId);
 
-					if (chunks[fileName] === undefined) {
-						chunks[fileName] = [{ index, data }];
+					if (!fileData) return;
+
+					const { name } = fileData;
+
+					if (chunks[name] === undefined) {
+						chunks[name] = [chunk];
 					} else {
-						chunks[fileName].push({ index, data });
+						chunks[name].push(chunk);
 					}
 
-					if (chunks[fileName].length == totalCount) {
-						const fileData = Array.from(files).find((x) => x.name == fileName);
-						const merged = new Uint8Array(fileData!.size);
+					const totalChunkCount = Math.ceil(fileData.size / CHUNK_SIZE);
+					if (chunks[name].length === totalChunkCount) {
+						const merged = new Uint8Array(fileData.size);
 
-						chunks[fileName].forEach((chunk) => {
+						chunks[name].forEach((chunk) => {
 							merged.set(chunk.data, chunk.index * CHUNK_SIZE);
 						});
-						chunks[fileName] = [];
-						downloadFile(merged, fileData!.type, fileName);
+						chunks[name] = [];
+						downloadFile(merged, fileData.mimeType, name);
 					}
 				}
 			} catch (error) {
-				console.error('Failed to parse file list message:', error);
+				console.error('Failed to parse file transfer message:', error);
 			}
 		});
 		localPeer.init();
 	};
 
-	const requestFileDownload = (fileName: string) => {
-		const requestDownloadMsg = new RequestDownloadMessage([fileName]);
+	const requestFileDownload = (id: string) => {
+		const requestDownloadMsg = new RequestDownloadMessage([id]);
 		localPeer?.sendMessage(requestDownloadMsg);
 	};
 

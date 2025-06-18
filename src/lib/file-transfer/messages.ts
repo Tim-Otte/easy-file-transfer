@@ -1,39 +1,41 @@
 export class FileItem {
+    name: string;
+    size: number;
+    mimeType: string;
+    lastModified: Date;
+
     constructor(
-        public name: string,
-        public size: number,
-        public type: string,
-        public lastModified: number
-    ) { }
+        public id: string,
+        file: File
+    ) {
+        this.name = file.name;
+        this.size = file.size;
+        this.mimeType = file.type;
+        this.lastModified = new Date(file.lastModified);
+    }
 }
 
-export interface IFileTransferMessage {
-    type: 'file-list' | 'request-download' | 'file-chunk';
-}
-
-export class FileListMessage implements IFileTransferMessage {
+export class FileListMessage {
     type = "file-list" as const;
-
     constructor(
         public files: FileItem[]
     ) { }
 }
 
-export class RequestDownloadMessage implements IFileTransferMessage {
+export class RequestDownloadMessage {
     type = "request-download" as const;
-
     constructor(
-        public fileNames: string[]
+        public ids: string[]
     ) { }
 }
 
-export class FileChunkMessage implements IFileTransferMessage {
+export class FileChunkMessage {
     type = "file-chunk" as const;
-
     constructor(
-        public fileName: string,
+        public fileId: string,
         public index: number,
-        public totalCount: number,
         public data: number[]
     ) { }
 }
+
+export type FileTransferMessage = FileListMessage | RequestDownloadMessage | FileChunkMessage;

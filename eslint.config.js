@@ -1,6 +1,7 @@
-import prettier from 'eslint-config-prettier';
-import js from '@eslint/js';
 import { includeIgnoreFile } from '@eslint/compat';
+import js from '@eslint/js';
+import prettier from 'eslint-config-prettier';
+import simpleImportSort from 'eslint-plugin-simple-import-sort';
 import svelte from 'eslint-plugin-svelte';
 import globals from 'globals';
 import { fileURLToPath } from 'node:url';
@@ -16,11 +17,12 @@ export default ts.config(
 	...svelte.configs.recommended,
 	prettier,
 	...svelte.configs.prettier,
+	simpleImportSort,
 	{
 		languageOptions: {
 			globals: { ...globals.browser, ...globals.node }
 		},
-		rules: { 'no-undef': 'off' }
+		rules: { 'no-undef': 'off', 'simple-import-sort/imports': 'error', 'simple-import-sort/exports': 'error' }
 	},
 	{
 		files: ['**/*.svelte', '**/*.svelte.ts', '**/*.svelte.js'],

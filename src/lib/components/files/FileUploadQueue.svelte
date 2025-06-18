@@ -1,15 +1,16 @@
 <script lang="ts">
-	import { m } from '$messages';
-	import { Trash } from '@lucide/svelte';
-	import { formatSize } from '$utils/file-size.js';
 	import { FileIcon } from '$components';
+	import type { FileListItem } from '$filetransfer/file-list-item';
+	import { m } from '$messages';
+	import { formatSize } from '$utils/file-size.js';
+	import { Trash } from '@lucide/svelte';
 
 	interface Props {
-		files: Set<File>;
+		files: Set<FileListItem>;
 	}
 
 	let { files = $bindable() }: Props = $props();
-	let totalFileSize = $derived(Array.from(files).reduce((sum, file) => sum + file.size, 0));
+	let totalFileSize = $derived(Array.from(files).reduce((sum, item) => sum + item.file.size, 0));
 </script>
 
 <div class="mt-4 flex items-end justify-between">
@@ -32,21 +33,21 @@
 	</button>
 </div>
 <div class="mt-4 space-y-4">
-	{#each files as file (file.name + file.size)}
+	{#each files as item (item.id)}
 		<div
 			class="flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 shadow dark:border-gray-700 dark:bg-zinc-700"
 		>
-			<FileIcon type={file.type} class="mr-1 text-2xl text-zinc-400" />
+			<FileIcon type={item.file.type} class="mr-1 text-2xl text-zinc-400" />
 			<div class="min-w-0 flex-1">
-				<div class="truncate font-medium">{file.name}</div>
+				<div class="truncate font-medium">{item.file.name}</div>
 				<div class="text-xs text-gray-500 dark:text-gray-400">
-					{formatSize(file.size)}
+					{formatSize(item.file.size)}
 				</div>
 			</div>
 			<button
 				class="cursor-pointer rounded p-2 text-red-500 transition-colors duration-200 hover:bg-zinc-800"
 				onclick={() => {
-					files = new Set(Array.from(files).filter((f) => f !== file));
+					files = new Set(Array.from(files).filter((f) => f !== item));
 				}}
 				aria-label="Remove file"
 			>
