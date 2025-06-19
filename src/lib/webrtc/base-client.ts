@@ -1,3 +1,4 @@
+import { ChaCha20_Poly1305, type EncryptedMessage, type KeyPair } from "$utils/encryption";
 import { SignalingClient } from "./signaling-client";
 
 const PING_INTERVAL = 5000;
@@ -25,17 +26,22 @@ type RTCClientEventDict = {
 };
 
 export class RTCClient {
+    public isSignalingOnline: boolean = false;
+    public connectionState: RTCConnectionState;
     protected signalingChannel: SignalingClient;
     protected connection: RTCPeerConnection;
     protected controlChannel: RTCDataChannel | null = null;
     protected fileChannel: RTCDataChannel | null = null;
+    protected sharedSecret: Uint8Array;
+    protected localCryptoKeypair: KeyPair | null = null;
+    protected remotePublicKey: Uint8Array | null = null;
+    protected encryptionKey: Uint8Array | null = null;
+    protected decryptionKey: Uint8Array | null = null;
     private eventHandlers: RTCClientEventDict;
-    public isSignalingOnline: boolean = false;
-    public connectionState: RTCConnectionState;
     private pingTimestamp: Date | null = null;
     private pingInterval: NodeJS.Timeout | null = null;
 
-    constructor(peerId: string | null = null) {
+    constructor(peerId: string | null = null, sharedSecret: Uint8Array) {
         this.signalingChannel = new SignalingClient(peerId);
         this.connection = new RTCPeerConnection({
             iceServers: [
@@ -52,6 +58,7 @@ export class RTCClient {
             controlMessage: [],
             fileMessage: []
         };
+        this.sharedSecret = sharedSecret;
     }
 
     protected updateStatus(state: RTCConnectionState) {
@@ -61,7 +68,7 @@ export class RTCClient {
         }
     }
 
-    init() {
+    async init() {
         // Initialize the RTC connection
         this.connection.onicecandidate = async (event) => {
             if (event.candidate) {
@@ -105,23 +112,33 @@ export class RTCClient {
     }
 
     private sendMessageToChannel<T>(channel: RTCDataChannel | null, message: T) {
-        if (channel?.readyState === 'open') {
-            if (typeof message === 'string') {
-                channel.send(message);
-            } else {
-                channel.send(JSON.stringify(message));
-            }
-        } else {
-            console.warn(`Channel '${channel?.label}' is not open, cannot send message`);
+        if (!this.encryptionKey) {
+            console.warn('Could not send message - encryption key not set');
+            return;
         }
+
+        if (channel?.readyState !== 'open') {
+            console.warn(`Channel '${channel?.label}' is not open, cannot send message`);
+            return;
+        }
+
+        let data: string;
+        if (typeof message === 'string') {
+            data = message;
+        } else {
+            data = JSON.stringify(message);
+        }
+
+        const encryptedData = ChaCha20_Poly1305.encrypt(this.encryptionKey, data);
+        channel.send(JSON.stringify(encryptedData));
     }
 
     sendControlMessage<T>(message: T) {
-        this.sendMessageToChannel(this.controlChannel, message);
+        return this.sendMessageToChannel(this.controlChannel, message);
     }
 
     sendFileMessage<T>(message: T) {
-        this.sendMessageToChannel(this.fileChannel, message);
+        return this.sendMessageToChannel(this.fileChannel, message);
     }
 
     protected initDataChannels() {
@@ -130,21 +147,25 @@ export class RTCClient {
         this.controlChannel.onopen = () => {
             console.debug('Control channel is open');
 
-            this.pingInterval = setInterval(() => {
+            this.pingInterval = setInterval(async () => {
                 if (this.pingTimestamp) return;
 
                 this.pingTimestamp = new Date();
-                this.sendControlMessage('ping');
+                this.controlChannel!.send('ping');
             }, PING_INTERVAL);
         };
 
         this.controlChannel.onmessage = (event) => {
-            if (event.data === 'ping') {
-                this.sendControlMessage('pong');
+            if (!this.decryptionKey) {
+                console.warn('Could not decrypt message - encryption key not set');
                 return;
             }
 
-            if (event.data === 'pong') {
+            if (event.data === 'ping') {
+                this.controlChannel!.send('pong');
+                return;
+            }
+            else if (event.data === 'pong') {
                 if (this.pingTimestamp) {
                     this.emit('ping', new Date().getTime() - this.pingTimestamp.getTime());
                     this.pingTimestamp = null;
@@ -152,8 +173,14 @@ export class RTCClient {
                 return;
             }
 
-            console.debug('Received message:', event.data);
-            this.emit('controlMessage', event.data);
+            try {
+                const encryptedMessage = JSON.parse(event.data) as EncryptedMessage;
+                const message = ChaCha20_Poly1305.decrypt(this.decryptionKey, encryptedMessage);
+
+                this.emit('controlMessage', message);
+            } catch (error) {
+                console.error(error);
+            }
         };
 
         this.controlChannel.onclose = () => {
@@ -178,7 +205,19 @@ export class RTCClient {
         };
 
         this.fileChannel.onmessage = (event) => {
-            this.emit('fileMessage', event.data);
+            if (!this.decryptionKey) {
+                console.warn('Could not decrypt message - encryption key not set');
+                return;
+            }
+
+            try {
+                const encryptedMessage = JSON.parse(event.data) as EncryptedMessage;
+                const message = ChaCha20_Poly1305.decrypt(this.decryptionKey, encryptedMessage);
+
+                this.emit('fileMessage', message);
+            } catch (error) {
+                console.error(error);
+            }
         };
 
         this.fileChannel.onclose = () => {

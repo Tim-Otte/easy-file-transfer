@@ -10,6 +10,7 @@
 	import { RTCConnectionState } from '$rtc/base-client';
 	import { RTCSender } from '$rtc/sender';
 	import { CHUNK_SIZE } from '$utils/constants';
+	import { Base64, waitForSodium, X25519 } from '$utils/encryption';
 	import { Cloud } from '@lucide/svelte';
 	import { onMount } from 'svelte';
 
@@ -27,11 +28,15 @@
 		}
 	});
 
-	const initPeerConnection = () => {
+	const initPeerConnection = async () => {
 		connectionState = RTCConnectionState.New;
-		localPeer = new RTCSender();
+		const sharedSecret = X25519.generateSharedSecret();
+
+		localPeer = new RTCSender(sharedSecret);
 		localPeer.on('signalingStateChanged', (isOnline) => {
-			shareUrl = isOnline ? `${location.origin}/receive?i=${localPeer!.peerId}` : null;
+			shareUrl = isOnline
+				? `${location.origin}/receive?i=${localPeer!.peerId}#${Base64.fromUint8Array(sharedSecret)}`
+				: null;
 		});
 		localPeer.on('connectionStateChanged', (state) => (connectionState = state));
 		localPeer.on('ping', (latency: number) => (ping = latency));
@@ -78,7 +83,8 @@
 		}
 	};
 
-	onMount(() => {
+	onMount(async () => {
+		await waitForSodium();
 		initPeerConnection();
 	});
 </script>

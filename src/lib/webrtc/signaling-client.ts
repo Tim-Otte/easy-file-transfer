@@ -1,9 +1,11 @@
-import { IceCandidateSignalingMessage, OfferSignalingMessage, RegisterSignalingMessage, SetDescriptionSignalingMessage, type SignalingMessage } from "../../websocket/signaling-server";
+import { HeloSignalingMessage, IceCandidateSignalingMessage, OfferSignalingMessage, PublicKeySignalingMessage, RegisterSignalingMessage, SetDescriptionSignalingMessage, type SignalingMessage } from "../../websocket/signaling-server";
 
 export class SignalingClient {
     socket: WebSocket;
     localId: string;
     remoteId: string | null = null;
+    onHelo: (() => void) | null = null;
+    onPublicKey: ((key: string) => void) | null = null;
     onOffer: ((data: RTCSessionDescriptionInit) => void) | null = null;
     onIceCandidate: ((data: RTCIceCandidateInit) => void) | null = null;
     onReceivedRemoteDescription: ((data: RTCSessionDescriptionInit) => void) | null = null;
@@ -41,31 +43,35 @@ export class SignalingClient {
                         this.socket.send(JSON.stringify(new RegisterSignalingMessage(this.localId)));
                     }
                 }
+                else if (message.type === 'helo') {
+                    this.remoteId = message.from;
+
+                    if (this.onHelo) {
+                        this.onHelo();
+                    }
+                }
+                else if (message.type === 'public-key') {
+                    if (!remoteId) {
+                        this.remoteId = message.from;
+                    }
+
+                    if (this.onPublicKey) {
+                        this.onPublicKey(message.key);
+                    }
+                }
                 else if (message.type === 'ice-candidate') {
                     if (this.onIceCandidate) {
                         this.onIceCandidate(message.candidate);
-                    }
-
-                    if (!remoteId) {
-                        this.remoteId = message.from;
                     }
                 }
                 else if (message.type === 'offer') {
                     if (this.onOffer) {
                         this.onOffer(message.offer);
                     }
-
-                    if (!remoteId) {
-                        this.remoteId = message.from;
-                    }
                 }
                 else if (message.type === 'set-description') {
                     if (this.onReceivedRemoteDescription) {
                         this.onReceivedRemoteDescription(message.description);
-                    }
-
-                    if (!remoteId) {
-                        this.remoteId = message.from;
                     }
                 }
             } catch (error) {
@@ -80,6 +86,18 @@ export class SignalingClient {
 
     private generateNewLocalId() {
         return crypto.randomUUID().split('-')[4];
+    }
+
+    sendHelo() {
+        if (this.socket?.readyState === WebSocket.OPEN && this.remoteId) {
+            this.socket.send(JSON.stringify(new HeloSignalingMessage(this.localId, this.remoteId)));
+        }
+    }
+
+    sendPublicKey(key: string) {
+        if (this.socket?.readyState === WebSocket.OPEN && this.remoteId) {
+            this.socket.send(JSON.stringify(new PublicKeySignalingMessage(this.localId, this.remoteId, key)));
+        }
     }
 
     sendIceCandidate(candidate: RTCIceCandidateInit) {

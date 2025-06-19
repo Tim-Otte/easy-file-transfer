@@ -24,6 +24,7 @@
 		"@tailwindcss/typography": "^0.5.15",
 		"@tailwindcss/vite": "^4.0.0",
 		"@types/express": "^5.0.3",
+		"@types/libsodium-wrappers": "^0.7.14",
 		"@types/ws": "^8.18.1",
 		"eslint": "^9.18.0",
 		"eslint-config-prettier": "^10.0.1",
@@ -49,6 +50,7 @@
 		"@inlang/paraglide-js": "^2.0.0",
 		"@lucide/svelte": "^0.513.0",
 		"express": "^5.1.0",
+		"libsodium-wrappers": "^0.7.15",
 		"ws": "^8.18.2"
 	}
 }

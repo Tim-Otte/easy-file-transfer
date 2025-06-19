@@ -10,6 +10,7 @@
 	import { RTCConnectionState } from '$rtc/base-client';
 	import { RTCReceiver } from '$rtc/receiver';
 	import { CHUNK_SIZE } from '$utils/constants';
+	import { Base64, waitForSodium } from '$utils/encryption';
 	import { Cloud } from '@lucide/svelte';
 	import { onMount, tick } from 'svelte';
 
@@ -22,10 +23,10 @@
 	let files = $state<Set<FileItem>>(new Set([]));
 	let chunks: { [fileName: string]: ChunkData[] } = {};
 
-	const connectToRemotePeer = (peerId: string) => {
+	const connectToRemotePeer = async (peerId: string, sharedSecret: string) => {
 		if (localPeer) return;
 
-		localPeer = new RTCReceiver(peerId);
+		localPeer = new RTCReceiver(peerId, Base64.toUint8Array(sharedSecret));
 		localPeer.on('connectionStateChanged', (state) => (connectionState = state));
 		localPeer.on('ping', (latency) => (ping = latency));
 		localPeer.on('controlMessage', (message: string) => {
@@ -88,15 +89,20 @@
 		URL.revokeObjectURL(url);
 	};
 
-	onMount(() => {
+	onMount(async () => {
+		await waitForSodium();
+
 		const params = new URLSearchParams(location.search);
-		if (params.has('i')) {
+		const encryptionKey = location.hash.startsWith('#')
+			? location.hash.substring(1)
+			: location.hash;
+		if (params.has('i') && encryptionKey.length > 4) {
 			remotePeerId = params.get('i');
 			if (remotePeerId) {
 				// Update the URL to remove the peer ID parameter
 				tick().then(() => replaceState(location.pathname, page.state));
 
-				connectToRemotePeer(remotePeerId);
+				connectToRemotePeer(remotePeerId, encryptionKey);
 			}
 		}
 	});
