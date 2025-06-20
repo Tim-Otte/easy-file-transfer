@@ -2,6 +2,7 @@
 	import { replaceState } from '$app/navigation';
 	import { page } from '$app/state';
 	import { FileDownloadQueue, RtcClientStatus } from '$components';
+	import PageHeader from '$components/PageHeader.svelte';
 	import {
 		FileItem,
 		RequestDownloadMessage,
@@ -11,7 +12,6 @@
 	import { RTCReceiver } from '$rtc/receiver';
 	import { CHUNK_SIZE } from '$utils/constants';
 	import { Base64, waitForSodium } from '$utils/encryption';
-	import { Cloud } from '@lucide/svelte';
 	import { onMount, tick } from 'svelte';
 
 	type ChunkData = { index: number; data: number[] };
@@ -112,11 +112,7 @@
 	<title>📥 Receive files</title>
 </svelte:head>
 
-<div class="mb-4 flex flex-row items-center justify-between font-[Space_Grotesk]">
-	<h1 class="text-3xl font-bold">
-		<Cloud size="35" class="mr-3 inline align-text-bottom text-blue-600" /> Easy file transfer
-	</h1>
-</div>
+<PageHeader status={connectionState} />
 
 <FileDownloadQueue {files} downloadFile={requestFileDownload} />
 

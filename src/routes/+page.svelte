@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { FileUpload, FileUploadQueue, RtcClientStatus, ShareUrl } from '$components';
+	import PageHeader from '$components/PageHeader.svelte';
 	import type { FileListItem } from '$filetransfer/file-list-item';
 	import {
 		FileChunkMessage,
@@ -11,7 +12,6 @@
 	import { RTCSender } from '$rtc/sender';
 	import { CHUNK_SIZE } from '$utils/constants';
 	import { Base64, waitForSodium, X25519 } from '$utils/encryption';
-	import { Cloud } from '@lucide/svelte';
 	import { onMount } from 'svelte';
 
 	let files = $state.raw(new Set<FileListItem>());
@@ -93,12 +93,9 @@
 	<title>📄 File upload</title>
 </svelte:head>
 
-<div class="mb-4 flex flex-row items-center justify-between font-[Space_Grotesk]">
-	<h1 class="text-3xl font-bold">
-		<Cloud size="35" class="mr-3 inline align-text-bottom text-blue-600" /> Easy file transfer
-	</h1>
+<PageHeader status={connectionState}>
 	<ShareUrl url={shareUrl} />
-</div>
+</PageHeader>
 
 <FileUpload bind:files />
 <FileUploadQueue bind:files />

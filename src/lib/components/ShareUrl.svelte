@@ -29,7 +29,7 @@
 	/>
 	<button
 		class={[
-			'ml-2 cursor-pointer rounded px-3 py-2 text-sm transition-colors duration-500 disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-900',
+			'ml-2 cursor-pointer rounded px-3 py-2 text-sm shadow transition-colors duration-500 disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-900',
 			showCopyUrlSuccess
 				? 'bg-green-600 text-green-950'
 				: 'bg-blue-800 text-white not-disabled:hover:bg-blue-700'
