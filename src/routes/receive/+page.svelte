@@ -3,10 +3,10 @@
 	import { page } from '$app/state';
 	import { FileDownloadQueue, RtcClientStatus } from '$components';
 	import PageHeader from '$components/PageHeader.svelte';
-	import type { Chunks, TransferProgress, TransferSpeeds } from '$filetransfer/helper-types';
+	import { type TransferData } from '$filetransfer/helper-types';
 	import {
-		FileItem,
 		RequestDownloadMessage,
+		type FileList,
 		type FileTransferMessage
 	} from '$filetransfer/messages';
 	import { RTCConnectionState } from '$rtc/base-client';
@@ -19,16 +19,15 @@
 	let remotePeerId = $state<string | null>(null);
 	let connectionState = $state(RTCConnectionState.New);
 	let ping = $state(0);
-	let files = $state<Set<FileItem>>(new Set([]));
-	let chunks = $state<Chunks>({});
+	let files = $state<FileList>({});
+	let currentDownload = $state<TransferData | null>(null);
 	let progress = $derived(
-		Array.from(files).reduce((result, file) => {
-			result[file.id] =
-				((chunks[file.id]?.chunkCount ?? 0) / Math.ceil(file.size / CHUNK_SIZE)) * 100;
-			return result;
-		}, {} as TransferProgress)
+		currentDownload
+			? (currentDownload.chunks.chunkCount /
+					Math.ceil(files[currentDownload.fileId].size / CHUNK_SIZE)) *
+					100
+			: 0
 	);
-	let downloadSpeed = $state<TransferSpeeds>({});
 
 	const connectToRemotePeer = async (peerId: string, sharedSecret: string) => {
 		if (localPeer) return;
@@ -40,67 +39,58 @@
 			try {
 				const msg = JSON.parse(message) as FileTransferMessage;
 				if (msg.type === 'file-list') {
-					files = new Set(msg.files);
+					files = msg.files;
 				}
 			} catch (error) {
 				console.error('Failed to parse file transfer message:', error);
 			}
 		});
-		localPeer.on('fileMessage', (message: string) => {
-			try {
-				const msg = JSON.parse(message) as FileTransferMessage;
-				if (msg.type === 'file-chunk') {
-					const { fileId, index, data } = msg;
-					const fileData = Array.from(files).find((x) => x.id === fileId);
+		localPeer.on('fileMessage', (data: Uint8Array) => {
+			if (!currentDownload) return;
 
-					if (!fileData) return;
+			const timeSinceLastUpdate = Date.now() - currentDownload.speed.lastUpdate;
 
-					if (chunks[fileId] === undefined) {
-						chunks[fileId] = {
-							chunkCount: 0,
-							data: new Uint8Array(fileData.size)
-						};
+			// Update download speed every second
+			if (timeSinceLastUpdate > 1000) {
+				const chunkCountSinceLastUpdate =
+					currentDownload.chunks.chunkCount - currentDownload.speed.lastChunkCount;
+				const bitsSinceLastUpdate = chunkCountSinceLastUpdate * CHUNK_SIZE * 8;
+				const bitsPerSecond = (bitsSinceLastUpdate / timeSinceLastUpdate) * 1000;
+				currentDownload.speed = {
+					lastUpdate: Date.now(),
+					lastChunkCount: currentDownload.chunks.chunkCount,
+					speed: bitsPerSecond
+				};
+			}
 
-						downloadSpeed[fileId] = {
-							lastUpdate: Date.now(),
-							lastChunkCount: 1,
-							speed: CHUNK_SIZE * 8 // Initial speed in bits per second
-						};
-					} else {
-						const timeSinceLastUpdate = Date.now() - downloadSpeed[fileId].lastUpdate;
+			currentDownload.chunks.data.set(data, currentDownload.chunks.chunkCount * CHUNK_SIZE);
+			currentDownload.chunks.chunkCount++;
 
-						if (timeSinceLastUpdate > 1000) {
-							const chunkCountSinceLastUpdate =
-								chunks[fileId].chunkCount - downloadSpeed[fileId].lastChunkCount;
-							const dataSizeSinceLastUpdate = chunkCountSinceLastUpdate * CHUNK_SIZE * 8; // in bits
-							const dataSizeInOneSecond = (dataSizeSinceLastUpdate / timeSinceLastUpdate) * 1000;
-							downloadSpeed[fileId] = {
-								lastUpdate: Date.now(),
-								lastChunkCount: chunks[fileId].chunkCount,
-								speed: dataSizeInOneSecond
-							};
-						}
-					}
+			const fileData = files[currentDownload.fileId];
+			const totalChunkCount = Math.ceil(fileData.size / CHUNK_SIZE);
+			if (currentDownload.chunks.chunkCount === totalChunkCount) {
+				downloadFile(currentDownload.chunks.data, fileData.mimeType, fileData.name);
 
-					chunks[fileId].data.set(data, index * CHUNK_SIZE);
-					chunks[fileId].chunkCount++;
-
-					const totalChunkCount = Math.ceil(fileData.size / CHUNK_SIZE);
-					if (chunks[fileId].chunkCount === totalChunkCount) {
-						downloadFile(chunks[fileId].data, fileData.mimeType, fileData.name);
-
-						delete chunks[fileId];
-						delete downloadSpeed[fileId];
-					}
-				}
-			} catch (error) {
-				console.error('Failed to parse file transfer message:', error);
+				currentDownload = null;
 			}
 		});
 		localPeer.init();
 	};
 
 	const requestFileDownload = (id: string) => {
+		currentDownload = {
+			fileId: id,
+			chunks: {
+				chunkCount: 0,
+				data: new Uint8Array(files[id].size)
+			},
+			speed: {
+				lastChunkCount: 0,
+				lastUpdate: Date.now(),
+				speed: 0
+			}
+		};
+
 		const requestDownloadMsg = new RequestDownloadMessage([id]);
 		localPeer?.sendControlMessage(requestDownloadMsg);
 	};
@@ -140,6 +130,6 @@
 
 <PageHeader status={connectionState} />
 
-<FileDownloadQueue {files} {progress} {downloadSpeed} downloadFile={requestFileDownload} />
+<FileDownloadQueue {files} {currentDownload} {progress} downloadFile={requestFileDownload} />
 
 <RtcClientStatus status={connectionState} {ping} />

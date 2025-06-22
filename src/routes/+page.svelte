@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { FileUpload, FileUploadQueue, RtcClientStatus, ShareUrl } from '$components';
 	import PageHeader from '$components/PageHeader.svelte';
-	import type { FileListItem } from '$filetransfer/file-list-item';
+	import { FileListItem } from '$filetransfer/file-list-item';
 	import {
-		FileChunkMessage,
-		FileItem,
+		FileData,
 		FileListMessage,
+		type FileList,
 		type FileTransferMessage
 	} from '$filetransfer/messages';
 	import { RTCConnectionState } from '$rtc/base-client';
@@ -60,10 +60,10 @@
 	const sendFileList = () => {
 		if (!localPeer) return;
 
-		const fileList = files
-			.values()
-			.map((item) => new FileItem(item.id, item.file))
-			.toArray();
+		const fileList = Array.from(files).reduce((result, item) => {
+			result[item.id] = new FileData(item.file);
+			return result;
+		}, {} as FileList);
 
 		localPeer.sendControlMessage(new FileListMessage(fileList));
 	};
@@ -78,9 +78,7 @@
 			);
 			const chunkBuffer = await chunk.arrayBuffer();
 			try {
-				await localPeer?.sendFileMessage(
-					new FileChunkMessage(item.id, chunkIndex, Object.values(new Uint8Array(chunkBuffer)))
-				);
+				await localPeer?.sendFileMessage(new Uint8Array(chunkBuffer));
 			} catch (error) {
 				console.error('Failed to send file chunk:', error);
 				// TODO: Handle error (e.g., retry logic, notify user)

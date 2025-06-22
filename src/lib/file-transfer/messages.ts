@@ -1,11 +1,10 @@
-export class FileItem {
+export class FileData {
     name: string;
     size: number;
     mimeType: string;
     lastModified: Date;
 
     constructor(
-        public id: string,
         file: File
     ) {
         this.name = file.name;
@@ -15,10 +14,12 @@ export class FileItem {
     }
 }
 
+export type FileList = Record<string, FileData>;
+
 export class FileListMessage {
     type = "file-list" as const;
     constructor(
-        public files: FileItem[]
+        public files: FileList
     ) { }
 }
 

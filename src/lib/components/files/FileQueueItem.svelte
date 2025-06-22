@@ -9,6 +9,7 @@
 		action: (id: string) => void;
 		icon: typeof IconType;
 		class: ClassValue;
+		disabled?: boolean;
 	};
 
 	type Props = {
@@ -19,13 +20,23 @@
 		actionButton: ActionButton | null;
 		progress?: number;
 		speed?: number;
+		class?: ClassValue;
 	};
 
-	let { fileId, mimeType, name, size, actionButton, progress, speed }: Props = $props();
+	let {
+		fileId,
+		mimeType,
+		name,
+		size,
+		actionButton,
+		progress,
+		speed,
+		class: itemClass
+	}: Props = $props();
 </script>
 
 <div
-	class="relative flex items-center gap-3 rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-3 shadow dark:border-gray-700 dark:bg-zinc-700"
+	class="relative flex items-center gap-3 rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-3 shadow dark:border-gray-700 dark:bg-zinc-700 {itemClass}"
 >
 	<FileIcon type={mimeType} class="mr-1 text-2xl text-zinc-400" />
 	<div class="min-w-0 flex-1">
@@ -47,8 +58,9 @@
 		</div>
 	{:else if actionButton}
 		<button
-			class={`cursor-pointer rounded p-2 transition-colors duration-200 hover:bg-zinc-800 ${actionButton.class}`}
+			class={`cursor-pointer rounded p-2 transition-colors duration-200 not-disabled:hover:bg-zinc-800 ${actionButton.class} disabled:cursor-not-allowed disabled:text-zinc-500`}
 			onclick={() => actionButton.action(fileId)}
+			disabled={actionButton.disabled}
 			aria-label="Download file"
 		>
 			<svelte:boundary>

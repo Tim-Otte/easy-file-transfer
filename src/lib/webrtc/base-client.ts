@@ -17,7 +17,7 @@ interface RTCClientEvents {
     connectionStateChanged: (state: RTCConnectionState) => void;
     ping: (latency: number) => void;
     controlMessage: (message: string) => void;
-    fileMessage: (message: string) => void;
+    fileMessage: (data: Uint8Array) => void;
 };
 
 type RTCClientEventDict = {
@@ -145,7 +145,7 @@ export class RTCClient {
                 const encryptedMessage = event.data as Uint8Array;
                 const message = ChaCha20_Poly1305.decrypt(this.decryptionKey, encryptedMessage);
 
-                this.emit('fileMessage', new TextDecoder().decode(message));
+                this.emit('fileMessage', message);
             } catch (error) {
                 console.error(error);
             }
@@ -224,14 +224,16 @@ export class RTCClient {
             return;
         }
 
-        let data: string;
-        if (typeof message === 'string') {
+        let data: Uint8Array;
+        if (typeof message === 'object' && message instanceof Uint8Array) {
             data = message;
+        } else if (typeof message === 'string') {
+            data = new TextEncoder().encode(message);
         } else {
-            data = JSON.stringify(message);
+            data = new TextEncoder().encode(JSON.stringify(message));
         }
 
-        const encryptedData = ChaCha20_Poly1305.encrypt(this.encryptionKey, new TextEncoder().encode(data));
+        const encryptedData = ChaCha20_Poly1305.encrypt(this.encryptionKey, data);
 
         if (channel.bufferedAmountLowThreshold > 0 && channel.bufferedAmount > channel.bufferedAmountLowThreshold) {
             await new Promise<void>(resolve => {
@@ -250,7 +252,7 @@ export class RTCClient {
         return this.sendMessageToChannel(this.controlChannel, message);
     }
 
-    async sendFileMessage<T>(message: T): Promise<void> {
+    async sendFileMessage(message: Uint8Array): Promise<void> {
         return this.sendMessageToChannel(this.fileChannel, message);
     }
 

@@ -14,3 +14,9 @@ export interface SpeedData {
 export type TransferSpeeds = Record<string, SpeedData>;
 
 export type TransferProgress = Record<string, number>;
+
+export interface TransferData {
+    fileId: string;
+    chunks: ChunkData;
+    speed: SpeedData;
+}
