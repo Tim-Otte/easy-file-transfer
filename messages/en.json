@@ -55,6 +55,7 @@
 		}
 	],
 	"ping": "Ping: {ping} ms",
+	"currently_downloading": "Currently downloading",
 	"download_queue_title": "Download queue",
 	"download_queue_subtitle": [
 		{

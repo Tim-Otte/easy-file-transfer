@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { FileIcon } from '$components';
 	import { formatSize } from '$utils/file-size';
-	import { type Icon as IconType } from '@lucide/svelte';
+	import { formatSpeed } from '$utils/transfer-speed';
+	import { Gauge, type Icon as IconType } from '@lucide/svelte';
 	import type { ClassValue } from 'svelte/elements';
 
 	type ActionButton = {
@@ -16,13 +17,15 @@
 		name: string;
 		size: number;
 		actionButton: ActionButton | null;
+		progress?: number;
+		speed?: number;
 	};
 
-	let { fileId, mimeType, name, size, actionButton }: Props = $props();
+	let { fileId, mimeType, name, size, actionButton, progress, speed }: Props = $props();
 </script>
 
 <div
-	class="flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 shadow dark:border-gray-700 dark:bg-zinc-700"
+	class="relative flex items-center gap-3 rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-3 shadow dark:border-gray-700 dark:bg-zinc-700"
 >
 	<FileIcon type={mimeType} class="mr-1 text-2xl text-zinc-400" />
 	<div class="min-w-0 flex-1">
@@ -31,7 +34,18 @@
 			{formatSize(size)}
 		</div>
 	</div>
-	{#if actionButton}
+	{#if speed !== undefined}
+		<div class="rounded bg-zinc-200 p-2 text-xs text-zinc-300 dark:bg-zinc-600">
+			<Gauge size="16" class="mr-1 inline align-text-bottom text-zinc-500 dark:text-zinc-300" />
+			{formatSpeed(speed)}
+		</div>
+		<div class="absolute right-0 bottom-0 left-0 h-1 rounded-b-lg bg-zinc-200 dark:bg-zinc-600">
+			<div
+				class="h-full rounded-lg bg-green-800 transition-all duration-500"
+				style="width: {progress?.toFixed(0) ?? 0}%;"
+			></div>
+		</div>
+	{:else if actionButton}
 		<button
 			class={`cursor-pointer rounded p-2 transition-colors duration-200 hover:bg-zinc-800 ${actionButton.class}`}
 			onclick={() => actionButton.action(fileId)}

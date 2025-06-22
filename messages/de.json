@@ -55,6 +55,7 @@
 		}
 	],
 	"ping": "Ping: {ping} ms",
+	"currently_downloading": "Aktueller Download",
 	"download_queue_title": "Download Warteschlange",
 	"download_queue_subtitle": [
 		{

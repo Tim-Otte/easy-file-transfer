@@ -1,4 +1,3 @@
-import { CONTROL_CHANNEL_LABEL, FILE_CHANNEL_LABEL } from "$utils/constants";
 import { Base64, ChaCha20_Poly1305, X25519 } from "$utils/encryption";
 import { RTCClient } from "./base-client";
 
@@ -7,25 +6,13 @@ export class RTCReceiver extends RTCClient {
         super(peerId, sharedSecret);
     }
 
-    get peerId() {
+    get peerId(): string {
         return this.signalingChannel.peerId;
     }
 
-    async init() {
-        await super.init();
+    public initSignalingChannel(): void {
+        super.initSignalingChannel();
 
-        // Initialize the control channel
-        this.controlChannel = this.connection.createDataChannel(CONTROL_CHANNEL_LABEL);
-        this.controlChannel.binaryType = 'arraybuffer';
-
-        // Initialize the file channel
-        this.fileChannel = this.connection.createDataChannel(FILE_CHANNEL_LABEL);
-        this.fileChannel.binaryType = 'arraybuffer';
-
-        // Add events to both channels
-        this.initDataChannels();
-
-        // Initialize the signaling channel
         this.signalingChannel.onOffer = async (offer) => {
             console.debug('Received offer:', offer);
 

@@ -3,6 +3,7 @@
 	import { page } from '$app/state';
 	import { FileDownloadQueue, RtcClientStatus } from '$components';
 	import PageHeader from '$components/PageHeader.svelte';
+	import type { Chunks, TransferProgress, TransferSpeeds } from '$filetransfer/helper-types';
 	import {
 		FileItem,
 		RequestDownloadMessage,
@@ -14,14 +15,20 @@
 	import { Base64, waitForSodium } from '$utils/encryption';
 	import { onMount, tick } from 'svelte';
 
-	type ChunkData = { index: number; data: number[] };
-
 	let localPeer: RTCReceiver | null;
 	let remotePeerId = $state<string | null>(null);
 	let connectionState = $state(RTCConnectionState.New);
 	let ping = $state(0);
 	let files = $state<Set<FileItem>>(new Set([]));
-	let chunks: { [fileName: string]: ChunkData[] } = {};
+	let chunks = $state<Chunks>({});
+	let progress = $derived(
+		Array.from(files).reduce((result, file) => {
+			result[file.id] =
+				((chunks[file.id]?.chunkCount ?? 0) / Math.ceil(file.size / CHUNK_SIZE)) * 100;
+			return result;
+		}, {} as TransferProgress)
+	);
+	let downloadSpeed = $state<TransferSpeeds>({});
 
 	const connectToRemotePeer = async (peerId: string, sharedSecret: string) => {
 		if (localPeer) return;
@@ -43,28 +50,47 @@
 			try {
 				const msg = JSON.parse(message) as FileTransferMessage;
 				if (msg.type === 'file-chunk') {
-					const { fileId, ...chunk }: { fileId: string } & ChunkData = msg;
+					const { fileId, index, data } = msg;
 					const fileData = Array.from(files).find((x) => x.id === fileId);
 
 					if (!fileData) return;
 
-					const { name } = fileData;
+					if (chunks[fileId] === undefined) {
+						chunks[fileId] = {
+							chunkCount: 0,
+							data: new Uint8Array(fileData.size)
+						};
 
-					if (chunks[name] === undefined) {
-						chunks[name] = [chunk];
+						downloadSpeed[fileId] = {
+							lastUpdate: Date.now(),
+							lastChunkCount: 1,
+							speed: CHUNK_SIZE * 8 // Initial speed in bits per second
+						};
 					} else {
-						chunks[name].push(chunk);
+						const timeSinceLastUpdate = Date.now() - downloadSpeed[fileId].lastUpdate;
+
+						if (timeSinceLastUpdate > 1000) {
+							const chunkCountSinceLastUpdate =
+								chunks[fileId].chunkCount - downloadSpeed[fileId].lastChunkCount;
+							const dataSizeSinceLastUpdate = chunkCountSinceLastUpdate * CHUNK_SIZE * 8; // in bits
+							const dataSizeInOneSecond = (dataSizeSinceLastUpdate / timeSinceLastUpdate) * 1000;
+							downloadSpeed[fileId] = {
+								lastUpdate: Date.now(),
+								lastChunkCount: chunks[fileId].chunkCount,
+								speed: dataSizeInOneSecond
+							};
+						}
 					}
 
-					const totalChunkCount = Math.ceil(fileData.size / CHUNK_SIZE);
-					if (chunks[name].length === totalChunkCount) {
-						const merged = new Uint8Array(fileData.size);
+					chunks[fileId].data.set(data, index * CHUNK_SIZE);
+					chunks[fileId].chunkCount++;
 
-						chunks[name].forEach((chunk) => {
-							merged.set(chunk.data, chunk.index * CHUNK_SIZE);
-						});
-						chunks[name] = [];
-						downloadFile(merged, fileData.mimeType, name);
+					const totalChunkCount = Math.ceil(fileData.size / CHUNK_SIZE);
+					if (chunks[fileId].chunkCount === totalChunkCount) {
+						downloadFile(chunks[fileId].data, fileData.mimeType, fileData.name);
+
+						delete chunks[fileId];
+						delete downloadSpeed[fileId];
 					}
 				}
 			} catch (error) {
@@ -114,6 +140,6 @@
 
 <PageHeader status={connectionState} />
 
-<FileDownloadQueue {files} downloadFile={requestFileDownload} />
+<FileDownloadQueue {files} {progress} {downloadSpeed} downloadFile={requestFileDownload} />
 
 <RtcClientStatus status={connectionState} {ping} />

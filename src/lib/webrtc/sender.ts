@@ -1,4 +1,3 @@
-import { CONTROL_CHANNEL_LABEL, FILE_CHANNEL_LABEL } from "$utils/constants";
 import { Base64, ChaCha20_Poly1305, X25519 } from "$utils/encryption";
 import { RTCClient } from "./base-client";
 
@@ -7,36 +6,13 @@ export class RTCSender extends RTCClient {
         super(null, sharedSecret);
     }
 
-    get peerId() {
+    get peerId(): string {
         return this.signalingChannel.peerId;
     }
 
-    get isRemoteConnected() {
-        return this.signalingChannel.remoteId !== null;
-    }
+    public initSignalingChannel(): void {
+        super.initSignalingChannel();
 
-    async init() {
-        await super.init();
-
-        // Initialize the RTC connection
-        this.connection.ondatachannel = async (event) => {
-            console.debug('Data channel received:', event.channel);
-
-            if (event.channel) {
-                if (event.channel.label === CONTROL_CHANNEL_LABEL) {
-                    this.controlChannel = event.channel;
-
-                    if (this.fileChannel) this.initDataChannels();
-                }
-                else if (event.channel.label === FILE_CHANNEL_LABEL) {
-                    this.fileChannel = event.channel;
-
-                    if (this.controlChannel) this.initDataChannels();
-                }
-            }
-        };
-
-        // Initialize the signaling channel
         this.signalingChannel.onReceivedRemoteDescription = async (description) => {
             console.debug('Received remote description:', description);
 

@@ -80,39 +80,39 @@ export class SignalingClient {
         };
     }
 
-    get peerId() {
+    get peerId(): string {
         return this.localId;
     }
 
-    private generateNewLocalId() {
+    private generateNewLocalId(): string {
         return crypto.randomUUID().split('-')[4];
     }
 
-    sendHelo() {
+    sendHelo(): void {
         if (this.socket?.readyState === WebSocket.OPEN && this.remoteId) {
             this.socket.send(JSON.stringify(new HeloSignalingMessage(this.localId, this.remoteId)));
         }
     }
 
-    sendPublicKey(key: string) {
+    sendPublicKey(key: string): void {
         if (this.socket?.readyState === WebSocket.OPEN && this.remoteId) {
             this.socket.send(JSON.stringify(new PublicKeySignalingMessage(this.localId, this.remoteId, key)));
         }
     }
 
-    sendIceCandidate(candidate: RTCIceCandidateInit) {
+    sendIceCandidate(candidate: RTCIceCandidateInit): void {
         if (this.socket?.readyState === WebSocket.OPEN && this.remoteId) {
             this.socket.send(JSON.stringify(new IceCandidateSignalingMessage(this.localId, this.remoteId, candidate)));
         }
     }
 
-    sendOffer(offer: RTCSessionDescriptionInit) {
+    sendOffer(offer: RTCSessionDescriptionInit): void {
         if (this.socket?.readyState === WebSocket.OPEN && this.remoteId) {
             this.socket.send(JSON.stringify(new OfferSignalingMessage(this.localId, this.remoteId, offer)));
         }
     }
 
-    sendLocalDescription(description: RTCSessionDescription) {
+    sendLocalDescription(description: RTCSessionDescription): void {
         if (this.socket?.readyState === WebSocket.OPEN && this.remoteId) {
             this.socket.send(JSON.stringify(new SetDescriptionSignalingMessage(this.localId, this.remoteId, description)));
         }

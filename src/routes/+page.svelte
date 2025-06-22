@@ -28,7 +28,7 @@
 		}
 	});
 
-	const initPeerConnection = async () => {
+	const initPeerConnection = () => {
 		connectionState = RTCConnectionState.New;
 		const sharedSecret = X25519.generateSharedSecret();
 
@@ -39,7 +39,7 @@
 				: null;
 		});
 		localPeer.on('connectionStateChanged', (state) => (connectionState = state));
-		localPeer.on('ping', (latency: number) => (ping = latency));
+		localPeer.on('ping', (latency) => (ping = latency));
 		localPeer.on('controlMessage', (message: string) => {
 			try {
 				const msg = JSON.parse(message) as FileTransferMessage;
@@ -77,9 +77,15 @@
 				Math.min((chunkIndex + 1) * CHUNK_SIZE, item.file.size)
 			);
 			const chunkBuffer = await chunk.arrayBuffer();
-			localPeer?.sendFileMessage(
-				new FileChunkMessage(item.id, chunkIndex, Object.values(new Uint8Array(chunkBuffer)))
-			);
+			try {
+				await localPeer?.sendFileMessage(
+					new FileChunkMessage(item.id, chunkIndex, Object.values(new Uint8Array(chunkBuffer)))
+				);
+			} catch (error) {
+				console.error('Failed to send file chunk:', error);
+				// TODO: Handle error (e.g., retry logic, notify user)
+				return;
+			}
 		}
 	};
 
