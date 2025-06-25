@@ -23,16 +23,16 @@
 	<input
 		type="text"
 		value={url?.replace(/http(s)?:\/\//, '') ?? 'Loading...'}
-		class="w-64 rounded border border-gray-300 px-3 py-2 text-sm text-ellipsis dark:border-gray-600 dark:bg-zinc-800 dark:text-gray-200"
+		class="w-64 rounded border border-zinc-500 bg-zinc-100 px-3 py-2 text-sm text-ellipsis dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-200"
 		readonly={url !== null}
 		disabled={!url}
 	/>
 	<button
 		class={[
-			'ml-2 cursor-pointer rounded px-3 py-2 text-sm shadow transition-colors duration-500 disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-900',
+			'ml-2 cursor-pointer rounded px-3 py-2 text-sm shadow transition-colors duration-500 disabled:cursor-not-allowed disabled:bg-zinc-400 disabled:text-zinc-600 disabled:dark:bg-zinc-700 disabled:dark:text-zinc-900',
 			showCopyUrlSuccess
-				? 'bg-green-600 text-green-950'
-				: 'bg-blue-800 text-white not-disabled:hover:bg-blue-700'
+				? 'bg-green-500 text-green-950 dark:bg-green-600'
+				: 'bg-blue-600 text-white not-disabled:hover:bg-blue-700 dark:bg-blue-800'
 		]}
 		onclick={onCopyUrlClick}
 		disabled={!url}

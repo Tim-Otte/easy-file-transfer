@@ -17,8 +17,10 @@
 			size="35"
 			strokeWidth="1.5"
 			class={[
-				'mr-3 inline align-text-bottom drop-shadow-lg transition-colors duration-300',
-				status === RTCConnectionState.DataChannelOpen ? 'text-green-700' : 'text-blue-600'
+				'mr-3 inline align-text-bottom drop-shadow-xs transition-colors duration-300',
+				status === RTCConnectionState.DataChannelOpen
+					? 'text-green-700 drop-shadow-green-600 dark:drop-shadow-green-800'
+					: 'text-blue-600 drop-shadow-blue-500 dark:drop-shadow-blue-700'
 			]}
 		/> Easy file transfer
 	</h1>

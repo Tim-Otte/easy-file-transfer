@@ -15,6 +15,7 @@
 		}
 	],
 	"dropzone_subtitle": "Alle Dateitypen werden unterstützt!",
+	"currently_uploading": "Aktueller Upload",
 	"upload_queue_title": "Upload Warteschlange",
 	"upload_queue_subtitle": [
 		{

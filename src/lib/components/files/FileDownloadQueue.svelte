@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { TransferData } from '$filetransfer/helper-types';
+	import type { FileDownloadData } from '$filetransfer/helper-types';
 	import type { FileList } from '$filetransfer/messages';
 	import { m } from '$messages';
 	import { formatSize } from '$utils/file-size.js';
@@ -8,7 +8,7 @@
 
 	interface Props {
 		files: FileList;
-		currentDownload: TransferData | null;
+		currentDownload: FileDownloadData | null;
 		progress: number;
 		downloadFile: (id: string) => void;
 	}
@@ -48,7 +48,7 @@
 	<h3 class="mt-8 text-xl font-semibold">
 		<span class="font-[Space_Grotesk]">{m.download_queue_title()}</span>
 		<span
-			class={['ml-1 text-xs text-gray-500 dark:text-gray-400', !filesInQueue.length && 'hidden']}
+			class={['ml-1 text-xs text-zinc-500 dark:text-zinc-400', !filesInQueue.length && 'hidden']}
 		>
 			{m.download_queue_subtitle({
 				fileCount: filesInQueue.length,
@@ -65,12 +65,12 @@
 			actionButton={{
 				action: downloadFile,
 				icon: Download,
-				class: 'text-green-500',
+				class: 'text-green-700 dark:text-green-500',
 				disabled: currentDownload !== null
 			}}
 		/>
 	{:else}
-		<div class="text-gray-500 dark:text-gray-400 text-sm">
+		<div class="text-zinc-500 dark:text-zinc-400 text-sm">
 			{m.download_queue_empty()}
 		</div>
 	{/each}

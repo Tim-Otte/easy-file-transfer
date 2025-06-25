@@ -36,29 +36,31 @@
 </script>
 
 <div
-	class="relative flex items-center gap-3 rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-3 shadow dark:border-gray-700 dark:bg-zinc-700 {itemClass}"
+	class="relative flex items-center gap-3 rounded-lg {speed
+		? 'border-t'
+		: 'border'} border-zinc-300 bg-zinc-200 px-4 py-3 dark:border-zinc-800 dark:bg-zinc-700 {itemClass}"
 >
-	<FileIcon type={mimeType} class="mr-1 text-2xl text-zinc-400" />
+	<FileIcon type={mimeType} class="mr-1 text-2xl text-zinc-600 dark:text-zinc-400" />
 	<div class="min-w-0 flex-1">
 		<div class="truncate font-medium">{name}</div>
-		<div class="text-xs text-gray-500 dark:text-gray-400">
+		<div class="text-xs text-zinc-500 dark:text-zinc-400">
 			{formatSize(size)}
 		</div>
 	</div>
 	{#if speed !== undefined}
-		<div class="rounded bg-zinc-200 p-2 text-xs text-zinc-300 dark:bg-zinc-600">
-			<Gauge size="16" class="mr-1 inline align-text-bottom text-zinc-500 dark:text-zinc-300" />
+		<div class="rounded bg-zinc-100 p-2 text-xs text-zinc-700 dark:bg-zinc-600">
+			<Gauge size="16" class="mr-1 inline align-text-bottom text-zinc-700 dark:text-zinc-300" />
 			{formatSpeed(speed)}
 		</div>
 		<div class="absolute right-0 bottom-0 left-0 h-1 rounded-b-lg bg-zinc-200 dark:bg-zinc-600">
 			<div
-				class="h-full rounded-lg bg-green-800 transition-all duration-500"
+				class="h-full rounded-lg bg-green-500 transition-all duration-500 dark:bg-green-800"
 				style="width: {progress?.toFixed(0) ?? 0}%;"
 			></div>
 		</div>
 	{:else if actionButton}
 		<button
-			class={`cursor-pointer rounded p-2 transition-colors duration-200 not-disabled:hover:bg-zinc-800 ${actionButton.class} disabled:cursor-not-allowed disabled:text-zinc-500`}
+			class={`cursor-pointer rounded p-2 transition-colors duration-200 not-disabled:hover:bg-zinc-300 not-disabled:hover:dark:bg-zinc-800 ${actionButton.class} disabled:cursor-not-allowed disabled:text-zinc-500`}
 			onclick={() => actionButton.action(fileId)}
 			disabled={actionButton.disabled}
 			aria-label="Download file"

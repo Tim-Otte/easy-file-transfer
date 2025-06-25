@@ -1,4 +1,4 @@
-import { CHUNK_SIZE, CONTROL_CHANNEL_LABEL, FILE_CHANNEL_LABEL, PING_TIMEOUT } from "$utils/constants";
+import { CONTROL_CHANNEL_LABEL, FILE_CHANNEL_LABEL, PING_TIMEOUT } from "$utils/constants";
 import { ChaCha20_Poly1305, type KeyPair } from "$utils/encryption";
 import { SignalingClient } from "./signaling-client";
 
@@ -128,7 +128,7 @@ export class RTCClient {
     protected initFileChannel(): void {
         this.fileChannel = this.connection.createDataChannel(FILE_CHANNEL_LABEL, { id: 2, negotiated: true });
         this.fileChannel.binaryType = 'arraybuffer';
-        this.fileChannel.bufferedAmountLowThreshold = 5 * CHUNK_SIZE;
+        this.fileChannel.bufferedAmountLowThreshold = 16 * 1024; // 16 KB
 
         this.fileChannel.onopen = () => {
             console.debug('Data channel is open');

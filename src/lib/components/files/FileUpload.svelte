@@ -41,7 +41,8 @@
 	const onDragOver = (event: DragEvent) => {
 		event.preventDefault();
 		event.stopPropagation();
-		dragActive = (event.dataTransfer?.files.length ?? 0) > 0;
+		console.debug(event);
+		dragActive = (event.dataTransfer?.items.length ?? 0) > 0;
 	};
 
 	const onDragLeave = (event: DragEvent) => {
@@ -59,12 +60,11 @@
 </script>
 
 <div
-	class={`relative flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 bg-white p-8 transition-all duration-400 dark:bg-zinc-900 ${
-		dragActive ? 'border-blue-600 bg-blue-50' : 'border-zinc-700 hover:border-blue-800'
+	class={`relative flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 p-8 transition-all duration-400 ${
+		dragActive
+			? 'border-blue-500 bg-zinc-100 dark:border-blue-600 dark:bg-zinc-800'
+			: 'border-zinc-400 bg-zinc-200 hover:border-blue-600 dark:border-zinc-700 dark:bg-zinc-900 hover:dark:border-blue-800'
 	}`}
-	ondrop={onDrop}
-	ondragover={onDragOver}
-	ondragleave={onDragLeave}
 	tabindex="0"
 	role="button"
 	aria-label="File upload dropzone"
@@ -74,6 +74,9 @@
 		multiple
 		class="absolute inset-0 h-full w-full cursor-pointer opacity-0"
 		onchange={onInput}
+		ondragover={onDragOver}
+		ondragleave={onDragLeave}
+		ondrop={onDrop}
 		tabindex="-1"
 		aria-label="File upload"
 	/>
@@ -88,6 +91,6 @@
 		<div class="mb-1 text-lg font-semibold">
 			{m.dropzone_title({ dragActive })}
 		</div>
-		<div class="text-sm text-gray-500 dark:text-gray-400">{m.dropzone_subtitle()}</div>
+		<div class="text-sm text-zinc-500 dark:text-zinc-400">{m.dropzone_subtitle()}</div>
 	</div>
 </div>

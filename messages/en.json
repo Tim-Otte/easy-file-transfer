@@ -15,6 +15,7 @@
 		}
 	],
 	"dropzone_subtitle": "All file types are supported!",
+	"currently_uploading": "Current upload",
 	"upload_queue_title": "Upload queue",
 	"upload_queue_subtitle": [
 		{
@@ -55,7 +56,7 @@
 		}
 	],
 	"ping": "Ping: {ping} ms",
-	"currently_downloading": "Currently downloading",
+	"currently_downloading": "Current download",
 	"download_queue_title": "Download queue",
 	"download_queue_subtitle": [
 		{

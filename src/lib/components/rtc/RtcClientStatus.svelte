@@ -16,14 +16,14 @@
 			case RTCConnectionState.New:
 			case RTCConnectionState.Disconnected:
 			case RTCConnectionState.Closed:
-				return 'bg-zinc-500 text-zinc-900';
+				return 'bg-zinc-400 dark:bg-zinc-500 text-zinc-900';
 			case RTCConnectionState.Connecting:
 				return 'bg-yellow-600 text-zinc-900';
 			case RTCConnectionState.Connected:
 			case RTCConnectionState.DataChannelOpen:
-				return 'bg-green-900 text-white';
+				return 'bg-green-700 dark:bg-green-900 text-white';
 			case RTCConnectionState.Failed:
-				return 'bg-red-900 text-white';
+				return 'bg-red-700 dark:bg-red-900 text-white';
 			default:
 				return '';
 		}

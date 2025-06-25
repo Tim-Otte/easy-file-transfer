@@ -1,43 +1,76 @@
 <script lang="ts">
 	import { FileQueueItem } from '$components';
 	import type { FileListItem } from '$filetransfer/file-list-item';
+	import type { FileUploadData } from '$filetransfer/helper-types';
 	import { m } from '$messages';
 	import { formatSize } from '$utils/file-size.js';
 	import { Trash } from '@lucide/svelte';
 
 	interface Props {
 		files: Set<FileListItem>;
+		currentUpload: FileUploadData | null;
+		progress: number;
 	}
 
-	let { files = $bindable() }: Props = $props();
-	let totalFileSize = $derived(Array.from(files).reduce((sum, item) => sum + item.file.size, 0));
+	let {
+		files = $bindable(),
+		progress = $bindable(),
+		currentUpload = $bindable()
+	}: Props = $props();
+
+	let currentUploadedFile = $derived(
+		Array.from(files).find((item) => item.id === currentUpload?.fileId)
+	);
+	let filesInQueue = $derived(
+		Array.from(files).filter((item) => item.id !== currentUpload?.fileId)
+	);
+	let totalQueueFileSize = $derived(filesInQueue.reduce((sum, item) => sum + item.file.size, 0));
 
 	const deleteFile = (id: string) => {
 		files = new Set(Array.from(files).filter((f) => f.id !== id));
 	};
 </script>
 
+{#if currentUpload}
+	<div class="mt-4 flex items-end justify-between">
+		<h3 class="mt-8 text-xl font-semibold">
+			<span class="font-[Space_Grotesk]">{m.currently_uploading()}</span>
+		</h3>
+	</div>
+	<FileQueueItem
+		{...currentUploadedFile!.file}
+		fileId={currentUpload.fileId}
+		mimeType={currentUploadedFile!.file.type}
+		{progress}
+		speed={currentUpload.speed?.speed ?? 0}
+		actionButton={null}
+		class="mt-4"
+	/>
+{/if}
+
 <div class="mt-4 flex items-end justify-between">
 	<h3 class="mt-8 text-xl font-semibold">
 		<span class="font-[Space_Grotesk]">{m.upload_queue_title()}</span>
-		<span class={['ml-1 text-xs text-gray-500 dark:text-gray-400', !files.size && 'hidden']}>
+		<span
+			class={['ml-1 text-xs text-zinc-500 dark:text-zinc-400', !filesInQueue.length && 'hidden']}
+		>
 			{m.upload_queue_subtitle({
-				fileCount: files.size,
-				totalSize: formatSize(totalFileSize)
+				fileCount: filesInQueue.length,
+				totalSize: formatSize(totalQueueFileSize)
 			})}</span
 		>
 	</h3>
 	<button
-		class={`cursor-pointer rounded px-3 py-1 text-red-500 transition-colors duration-400 hover:not-disabled:bg-zinc-700 disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-900`}
+		class={`cursor-pointer rounded px-3 py-1 text-red-500 transition-colors duration-400 hover:not-disabled:bg-zinc-200 disabled:cursor-not-allowed disabled:bg-zinc-200 disabled:text-zinc-400 hover:not-disabled:dark:bg-zinc-700 disabled:dark:bg-zinc-700 disabled:dark:text-zinc-900`}
 		onclick={() => (files = new Set())}
-		disabled={files.size === 0}
+		disabled={files.size === 0 || currentUpload !== null}
 		aria-label="Clear upload queue"
 	>
 		{m.clear_upload_queue()}
 	</button>
 </div>
 <div class="mt-4 space-y-4">
-	{#each files as item (item.id)}
+	{#each filesInQueue as item (item.id)}
 		<FileQueueItem
 			{...item.file}
 			fileId={item.id}
@@ -45,11 +78,12 @@
 			actionButton={{
 				action: deleteFile,
 				icon: Trash,
-				class: 'text-red-500'
+				class: 'text-red-500',
+				disabled: currentUpload !== null
 			}}
 		/>
 	{:else}
-		<div class="text-gray-500 dark:text-gray-400 text-sm">
+		<div class="text-zinc-500 dark:text-zinc-400 text-sm">
 			{m.upload_queue_empty()}
 		</div>
 	{/each}

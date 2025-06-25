@@ -30,13 +30,4 @@ export class RequestDownloadMessage {
     ) { }
 }
 
-export class FileChunkMessage {
-    type = "file-chunk" as const;
-    constructor(
-        public fileId: string,
-        public index: number,
-        public data: number[]
-    ) { }
-}
-
-export type FileTransferMessage = FileListMessage | RequestDownloadMessage | FileChunkMessage;
+export type FileTransferMessage = FileListMessage | RequestDownloadMessage;

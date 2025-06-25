@@ -3,7 +3,8 @@
 	import { page } from '$app/state';
 	import { FileDownloadQueue, RtcClientStatus } from '$components';
 	import PageHeader from '$components/PageHeader.svelte';
-	import { type TransferData } from '$filetransfer/helper-types';
+	import { FileDecompressionStream } from '$filetransfer/file-decompression-stream';
+	import { type FileDownloadData } from '$filetransfer/helper-types';
 	import {
 		RequestDownloadMessage,
 		type FileList,
@@ -11,7 +12,6 @@
 	} from '$filetransfer/messages';
 	import { RTCConnectionState } from '$rtc/base-client';
 	import { RTCReceiver } from '$rtc/receiver';
-	import { CHUNK_SIZE } from '$utils/constants';
 	import { Base64, waitForSodium } from '$utils/encryption';
 	import { onMount, tick } from 'svelte';
 
@@ -20,13 +20,10 @@
 	let connectionState = $state(RTCConnectionState.New);
 	let ping = $state(0);
 	let files = $state<FileList>({});
-	let currentDownload = $state<TransferData | null>(null);
+	let currentDownload = $state<FileDownloadData | null>(null);
+	let currentDecompressedSize = $state(0);
 	let progress = $derived(
-		currentDownload
-			? (currentDownload.chunks.chunkCount /
-					Math.ceil(files[currentDownload.fileId].size / CHUNK_SIZE)) *
-					100
-			: 0
+		currentDownload ? (currentDecompressedSize / files[currentDownload.fileId].size) * 100 : 0
 	);
 
 	const connectToRemotePeer = async (peerId: string, sharedSecret: string) => {
@@ -35,7 +32,7 @@
 		localPeer = new RTCReceiver(peerId, Base64.toUint8Array(sharedSecret));
 		localPeer.on('connectionStateChanged', (state) => (connectionState = state));
 		localPeer.on('ping', (latency) => (ping = latency));
-		localPeer.on('controlMessage', (message: string) => {
+		localPeer.on('controlMessage', async (message: string) => {
 			try {
 				const msg = JSON.parse(message) as FileTransferMessage;
 				if (msg.type === 'file-list') {
@@ -45,34 +42,26 @@
 				console.error('Failed to parse file transfer message:', error);
 			}
 		});
-		localPeer.on('fileMessage', (data: Uint8Array) => {
+		localPeer.on('fileMessage', async (data: Uint8Array) => {
 			if (!currentDownload) return;
 
 			const timeSinceLastUpdate = Date.now() - currentDownload.speed.lastUpdate;
 
 			// Update download speed every second
 			if (timeSinceLastUpdate > 1000) {
-				const chunkCountSinceLastUpdate =
-					currentDownload.chunks.chunkCount - currentDownload.speed.lastChunkCount;
-				const bitsSinceLastUpdate = chunkCountSinceLastUpdate * CHUNK_SIZE * 8;
+				const bytesSinceLastUpdate =
+					currentDownload.data.decompressedSize - currentDownload.speed.lastFileSize;
+				const bitsSinceLastUpdate = bytesSinceLastUpdate * 8;
 				const bitsPerSecond = (bitsSinceLastUpdate / timeSinceLastUpdate) * 1000;
 				currentDownload.speed = {
 					lastUpdate: Date.now(),
-					lastChunkCount: currentDownload.chunks.chunkCount,
+					lastFileSize: currentDownload.data.decompressedSize,
 					speed: bitsPerSecond
 				};
 			}
 
-			currentDownload.chunks.data.set(data, currentDownload.chunks.chunkCount * CHUNK_SIZE);
-			currentDownload.chunks.chunkCount++;
-
-			const fileData = files[currentDownload.fileId];
-			const totalChunkCount = Math.ceil(fileData.size / CHUNK_SIZE);
-			if (currentDownload.chunks.chunkCount === totalChunkCount) {
-				downloadFile(currentDownload.chunks.data, fileData.mimeType, fileData.name);
-
-				currentDownload = null;
-			}
+			await currentDownload.data.writeChunk(data);
+			currentDecompressedSize = currentDownload?.data.decompressedSize ?? 0;
 		});
 		localPeer.init();
 	};
@@ -80,14 +69,25 @@
 	const requestFileDownload = (id: string) => {
 		currentDownload = {
 			fileId: id,
-			chunks: {
-				chunkCount: 0,
-				data: new Uint8Array(files[id].size)
-			},
+			data: new FileDecompressionStream(),
 			speed: {
-				lastChunkCount: 0,
+				lastFileSize: 0,
 				lastUpdate: Date.now(),
 				speed: 0
+			}
+		};
+
+		currentDownload.data.onChunkAdded = () => {
+			if (files[currentDownload!.fileId].size === currentDownload!.data.decompressedSize) {
+				console.info(
+					`Download complete: ${files[currentDownload!.fileId].name}, compression ratio: ${((currentDownload!.data.compressedSize / currentDownload!.data.decompressedSize) * 100).toFixed(0)}%`
+				);
+
+				const fileData = files[currentDownload!.fileId];
+				const decompressedData = currentDownload!.data.getDecompressedData();
+				downloadFile(decompressedData, fileData.mimeType, fileData.name);
+				currentDownload = null;
+				currentDecompressedSize = 0;
 			}
 		};
 
@@ -130,6 +130,11 @@
 
 <PageHeader status={connectionState} />
 
-<FileDownloadQueue {files} {currentDownload} {progress} downloadFile={requestFileDownload} />
+<FileDownloadQueue
+	bind:files
+	bind:currentDownload
+	bind:progress
+	downloadFile={requestFileDownload}
+/>
 
 <RtcClientStatus status={connectionState} {ping} />

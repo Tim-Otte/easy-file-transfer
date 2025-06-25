@@ -2,6 +2,7 @@
 	import { FileUpload, FileUploadQueue, RtcClientStatus, ShareUrl } from '$components';
 	import PageHeader from '$components/PageHeader.svelte';
 	import { FileListItem } from '$filetransfer/file-list-item';
+	import type { FileUploadData } from '$filetransfer/helper-types';
 	import {
 		FileData,
 		FileListMessage,
@@ -10,7 +11,7 @@
 	} from '$filetransfer/messages';
 	import { RTCConnectionState } from '$rtc/base-client';
 	import { RTCSender } from '$rtc/sender';
-	import { CHUNK_SIZE } from '$utils/constants';
+	import { COMPRESSION_ALGORITHM } from '$utils/constants';
 	import { Base64, waitForSodium, X25519 } from '$utils/encryption';
 	import { onMount } from 'svelte';
 
@@ -19,6 +20,14 @@
 	let shareUrl = $state<string | null>(null);
 	let connectionState = $state(RTCConnectionState.New);
 	let ping = $state(0);
+	let currentUpload = $state<FileUploadData | null>(null);
+	let progress = $derived(
+		currentUpload
+			? (currentUpload.sentBytes /
+					Array.from(files).find((x) => x.id == currentUpload!.fileId)!.file.size) *
+					100
+			: 0
+	);
 
 	$effect(() => {
 		if (connectionState === RTCConnectionState.DataChannelOpen) {
@@ -69,22 +78,55 @@
 	};
 
 	const sendFile = async (item: FileListItem) => {
-		const totalChunkCount = Math.ceil(item.file.size / CHUNK_SIZE);
+		currentUpload = {
+			fileId: item.id,
+			sentBytes: 0,
+			speed: {
+				lastFileSize: 0,
+				lastUpdate: Date.now(),
+				speed: 0
+			}
+		};
+		const compressedFileReader = item.file
+			.stream()
+			.pipeThrough(
+				new TransformStream({
+					transform(chunk, controller) {
+						controller.enqueue(chunk);
+						currentUpload!.sentBytes += chunk.byteLength;
 
-		for (let chunkIndex = 0; chunkIndex < totalChunkCount; chunkIndex++) {
-			const chunk = item.file.slice(
-				chunkIndex * CHUNK_SIZE,
-				Math.min((chunkIndex + 1) * CHUNK_SIZE, item.file.size)
-			);
-			const chunkBuffer = await chunk.arrayBuffer();
+						const timeSinceLastUpdate = Date.now() - currentUpload!.speed.lastUpdate;
+						if (timeSinceLastUpdate > 1000) {
+							const bytesSinceLastUpdate =
+								currentUpload!.sentBytes - currentUpload!.speed.lastFileSize;
+							const bitsSinceLastUpdate = bytesSinceLastUpdate * 8;
+							const bitsPerSecond = (bitsSinceLastUpdate / timeSinceLastUpdate) * 1000;
+							currentUpload!.speed = {
+								lastUpdate: Date.now(),
+								lastFileSize: currentUpload!.sentBytes,
+								speed: bitsPerSecond
+							};
+						}
+					}
+				})
+			)
+			.pipeThrough(new CompressionStream(COMPRESSION_ALGORITHM))
+			.getReader();
+
+		do {
+			const { done, value } = await compressedFileReader.read();
+
+			if (done) break;
+
 			try {
-				await localPeer?.sendFileMessage(new Uint8Array(chunkBuffer));
+				await localPeer?.sendFileMessage(value);
 			} catch (error) {
 				console.error('Failed to send file chunk:', error);
-				// TODO: Handle error (e.g., retry logic, notify user)
-				return;
+				break;
 			}
-		}
+		} while (true);
+
+		currentUpload = null;
 	};
 
 	onMount(async () => {
@@ -102,6 +144,6 @@
 </PageHeader>
 
 <FileUpload bind:files />
-<FileUploadQueue bind:files />
+<FileUploadQueue bind:files bind:currentUpload bind:progress />
 
 <RtcClientStatus status={connectionState} {ping} />
