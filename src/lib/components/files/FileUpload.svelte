@@ -60,7 +60,7 @@
 </script>
 
 <div
-	class={`relative flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 p-8 transition-all duration-400 ${
+	class={`relative flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 p-4 py-6 transition-all duration-400 sm:p-8 ${
 		dragActive
 			? 'border-blue-500 bg-zinc-100 dark:border-blue-600 dark:bg-zinc-800'
 			: 'border-zinc-400 bg-zinc-200 hover:border-blue-600 dark:border-zinc-700 dark:bg-zinc-900 hover:dark:border-blue-800'
@@ -88,8 +88,13 @@
 				<Upload />
 			{/if}
 		</div>
-		<div class="mb-1 text-lg font-semibold">
-			{m.dropzone_title({ dragActive })}
+		<div class="mb-1 text-center text-sm font-semibold sm:text-lg">
+			<span class="hidden sm:inline">
+				{m.dropzone_title({ dragActive, mobile: false })}
+			</span>
+			<span class="sm:hidden">
+				{m.dropzone_title({ dragActive, mobile: true })}
+			</span>
 		</div>
 		<div class="text-sm text-zinc-500 dark:text-zinc-400">{m.dropzone_subtitle()}</div>
 	</div>

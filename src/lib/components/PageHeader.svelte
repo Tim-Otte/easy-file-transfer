@@ -12,7 +12,7 @@
 </script>
 
 <div class="mb-5 flex flex-row items-center justify-between font-[Space_Grotesk]">
-	<h1 class="text-3xl font-bold">
+	<h1 class="text-xl font-bold">
 		<Send
 			size="35"
 			strokeWidth="1.5"
@@ -22,7 +22,8 @@
 					? 'text-green-700 drop-shadow-green-600 dark:drop-shadow-green-800'
 					: 'text-blue-600 drop-shadow-blue-500 dark:drop-shadow-blue-700'
 			]}
-		/> Easy file transfer
+		/>
+		<span class="hidden sm:inline">Easy file transfer</span>
 	</h1>
 	{#if children}
 		{@render children()}

@@ -45,10 +45,15 @@
 		<div class="truncate font-medium">{name}</div>
 		<div class="text-xs text-zinc-500 dark:text-zinc-400">
 			{formatSize(size)}
+			{#if speed}
+				<span class="sm:hidden"> · {formatSpeed(speed)}</span>
+			{/if}
 		</div>
 	</div>
 	{#if speed !== undefined}
-		<div class="rounded bg-zinc-100 p-2 text-xs text-zinc-700 dark:bg-zinc-600">
+		<div
+			class="rounded bg-zinc-100 p-2 text-xs text-zinc-700 not-sm:hidden dark:bg-zinc-600 dark:text-zinc-300"
+		>
 			<Gauge size="16" class="mr-1 inline align-text-bottom text-zinc-700 dark:text-zinc-300" />
 			{formatSpeed(speed)}
 		</div>

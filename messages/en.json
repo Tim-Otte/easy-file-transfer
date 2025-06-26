@@ -3,14 +3,17 @@
 	"dropzone_title": [
 		{
 			"declarations": [
-				"input dragActive"
+				"input dragActive",
+				"input mobile"
 			],
 			"selectors": [
-				"dragActive"
+				"dragActive",
+				"mobile"
 			],
 			"match": {
-				"dragActive=1": "Drop files here",
-				"dragActive=0": "Drag & drop files or click to upload"
+				"dragActive=1, mobile=0": "Drop files here",
+				"dragActive=0, mobile=0": "Drag & drop files or click to upload",
+				"dragActive=0, mobile=1": "Click here to upload files"
 			}
 		}
 	],
@@ -75,5 +78,7 @@
 			}
 		}
 	],
-	"download_queue_empty": "The download queue is empty."
+	"download_queue_empty": "The download queue is empty.",
+	"share_url": "Share URL",
+	"share_url_text": "Share this URL with others to allow them to download the files:"
 }

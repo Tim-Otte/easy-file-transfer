@@ -1,5 +1,7 @@
 <script lang="ts">
-	import { Check, Copy, Loader2 } from '@lucide/svelte';
+	import { m } from '$messages';
+	import { isMobile } from '$utils/mobile-check';
+	import { Check, Copy, Loader2, Share2 } from '@lucide/svelte';
 
 	interface Props {
 		url: string | null;
@@ -7,14 +9,27 @@
 
 	let { url }: Props = $props();
 	let showCopyUrlSuccess = $state(false);
+	const iconClass = 'inline h-4 w-4';
 
 	const onCopyUrlClick = () => {
 		if (url) {
-			navigator.clipboard.writeText(url);
-			showCopyUrlSuccess = true;
-			setTimeout(() => {
-				showCopyUrlSuccess = false;
-			}, 2500);
+			if (isMobile() && typeof navigator.share === 'function') {
+				navigator
+					.share({
+						title: m.share_url(),
+						text: m.share_url_text(),
+						url: url
+					})
+					.catch((error) => {
+						console.error('Error sharing:', error);
+					});
+			} else {
+				navigator.clipboard.writeText(url);
+				showCopyUrlSuccess = true;
+				setTimeout(() => {
+					showCopyUrlSuccess = false;
+				}, 2500);
+			}
 		}
 	};
 </script>
@@ -23,7 +38,7 @@
 	<input
 		type="text"
 		value={url?.replace(/http(s)?:\/\//, '') ?? 'Loading...'}
-		class="w-64 rounded border border-zinc-500 bg-zinc-100 px-3 py-2 text-sm text-ellipsis dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-200"
+		class="hidden w-64 rounded border border-zinc-500 bg-zinc-100 px-3 py-2 text-sm text-ellipsis sm:inline-block dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-200"
 		readonly={url !== null}
 		disabled={!url}
 	/>
@@ -40,12 +55,13 @@
 	>
 		{#if url}
 			{#if showCopyUrlSuccess}
-				<Check class="inline h-4 w-4" />
+				<Check class={iconClass} />
 			{:else}
-				<Copy class="inline h-4 w-4" />
+				<Copy class="{iconClass} not-sm:hidden" />
+				<Share2 class="{iconClass} sm:hidden" />
 			{/if}
 		{:else}
-			<Loader2 class="inline h-4 w-4 animate-spin" />
+			<Loader2 class="{iconClass} animate-spin" />
 		{/if}
 	</button>
 </div>

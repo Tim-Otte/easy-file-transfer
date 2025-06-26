@@ -3,14 +3,17 @@
 	"dropzone_title": [
 		{
 			"declarations": [
-				"input dragActive"
+				"input dragActive",
+				"input mobile"
 			],
 			"selectors": [
-				"dragActive"
+				"dragActive",
+				"mobile"
 			],
 			"match": {
-				"dragActive=1": "Dateien hier ablegen",
-				"dragActive=0": "Hier Dateien ablegen oder klicken, um sie hochzuladen"
+				"dragActive=1, mobile=0": "Dateien hier ablegen",
+				"dragActive=0, mobile=0": "Hier Dateien ablegen oder klicken, um sie hochzuladen",
+				"dragActive=*, mobile=1": "Hier klicken, um Dateien hochzuladen"
 			}
 		}
 	],
@@ -75,5 +78,7 @@
 			}
 		}
 	],
-	"download_queue_empty": "Die Download-Warteschlange ist leer."
+	"download_queue_empty": "Die Download-Warteschlange ist leer.",
+	"share_url": "Link teilen",
+	"share_url_text": "Teile diese URL mit anderen, damit sie die Dateien herunterladen können:"
 }

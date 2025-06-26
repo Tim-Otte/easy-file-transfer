@@ -49,10 +49,10 @@
 {/if}
 
 <div class="mt-4 flex items-end justify-between">
-	<h3 class="mt-8 text-xl font-semibold">
+	<h3 class="mt-8 flex flex-col items-baseline text-xl font-semibold sm:flex-row">
 		<span class="font-[Space_Grotesk]">{m.upload_queue_title()}</span>
 		<span
-			class={['ml-1 text-xs text-zinc-500 dark:text-zinc-400', !filesInQueue.length && 'hidden']}
+			class={['text-xs text-zinc-500 sm:ml-2 dark:text-zinc-400', !filesInQueue.length && 'hidden']}
 		>
 			{m.upload_queue_subtitle({
 				fileCount: filesInQueue.length,
