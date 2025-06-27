@@ -13,6 +13,7 @@
 
 	const onCopyUrlClick = () => {
 		if (url) {
+			// If on mobile and navigator.share is available, use the share functionality
 			if (isMobile() && typeof navigator.share === 'function') {
 				navigator
 					.share({
@@ -23,7 +24,9 @@
 					.catch((error) => {
 						console.error('Error sharing:', error);
 					});
-			} else {
+			}
+			// Else, copy the URL to clipboard
+			else {
 				navigator.clipboard.writeText(url);
 				showCopyUrlSuccess = true;
 				setTimeout(() => {

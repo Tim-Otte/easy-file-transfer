@@ -13,20 +13,20 @@ export class RTCReceiver extends RTCClient {
     public initSignalingChannel(): void {
         super.initSignalingChannel();
 
-        this.signalingChannel.onOffer = async (offer) => {
+        this.signalingChannel.on('offer', async (offer) => {
             console.debug('Received offer:', offer);
 
             await this.connection.setLocalDescription(offer);
             this.signalingChannel.sendLocalDescription(this.connection.localDescription!);
-        };
+        });
 
-        this.signalingChannel.onReceivedRemoteDescription = async (description) => {
+        this.signalingChannel.on('receivedRemoteDescription', async (description) => {
             console.debug('Received remote description:', description);
 
             await this.connection.setRemoteDescription(description);
-        };
+        });
 
-        this.signalingChannel.onPublicKey = async (key) => {
+        this.signalingChannel.on('publicKey', async (key) => {
             if (this.remotePublicKey) return;
 
             // Generate own local keypair
@@ -46,22 +46,22 @@ export class RTCReceiver extends RTCClient {
             const offer = await this.connection.createOffer();
             await this.connection.setLocalDescription(offer);
             this.signalingChannel.sendLocalDescription(this.connection.localDescription!);
-        };
+        });
 
-        this.signalingChannel.onSocketOpen = async () => {
+        this.signalingChannel.on('socketOpen', async () => {
             console.debug('Signaling channel is open');
 
             this.isSignalingOnline = true;
             this.emit('signalingStateChanged', this.isSignalingOnline);
 
             this.signalingChannel.sendHelo();
-        };
+        });
 
-        this.signalingChannel.onSocketClose = () => {
+        this.signalingChannel.on('socketClose', () => {
             console.debug('Signaling channel is closed');
 
             this.isSignalingOnline = false;
             this.emit('signalingStateChanged', this.isSignalingOnline);
-        };
+        });
     }
 }

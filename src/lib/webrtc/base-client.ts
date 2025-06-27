@@ -1,5 +1,6 @@
 import { CONTROL_CHANNEL_LABEL, FILE_CHANNEL_LABEL, PING_TIMEOUT } from "$utils/constants";
 import { ChaCha20_Poly1305, type KeyPair } from "$utils/encryption";
+import { EventEmitter } from "$utils/event-emitter";
 import { SignalingClient } from "./signaling-client";
 
 export enum RTCConnectionState {
@@ -20,11 +21,7 @@ interface RTCClientEvents {
     fileMessage: (data: Uint8Array) => void;
 };
 
-type RTCClientEventDict = {
-    [K in keyof RTCClientEvents]: RTCClientEvents[K][]
-};
-
-export class RTCClient {
+export class RTCClient extends EventEmitter<RTCClientEvents> {
     public isSignalingOnline = false;
     public connectionState: RTCConnectionState;
     protected signalingChannel: SignalingClient;
@@ -36,10 +33,11 @@ export class RTCClient {
     protected remotePublicKey: Uint8Array | null = null;
     protected encryptionKey: Uint8Array | null = null;
     protected decryptionKey: Uint8Array | null = null;
-    private eventHandlers: RTCClientEventDict;
     private pingTimestamp: Date | null = null;
 
     constructor(peerId: string | null = null, sharedSecret: Uint8Array) {
+        super();
+
         this.signalingChannel = new SignalingClient(peerId);
         this.connection = new RTCPeerConnection({
             iceServers: [
@@ -49,13 +47,6 @@ export class RTCClient {
             ]
         });
         this.connectionState = RTCConnectionState.New;
-        this.eventHandlers = {
-            signalingStateChanged: [],
-            connectionStateChanged: [],
-            ping: [],
-            controlMessage: [],
-            fileMessage: []
-        };
         this.sharedSecret = sharedSecret;
     }
 
@@ -71,6 +62,8 @@ export class RTCClient {
         this.initFileChannel();
         this.initConnection();
         this.initSignalingChannel();
+
+        this.signalingChannel.connect();
     }
 
     protected initControlChannel(): void {
@@ -195,7 +188,7 @@ export class RTCClient {
     }
 
     protected initSignalingChannel(): void {
-        this.signalingChannel.onIceCandidate = (candidate) => {
+        this.signalingChannel.on('iceCandidate', (candidate) => {
             if (this.connectionState === RTCConnectionState.DataChannelOpen) {
                 console.warn('Rejected ICE candidate')
             } else {
@@ -203,7 +196,7 @@ export class RTCClient {
 
                 this.connection.addIceCandidate(candidate);
             }
-        };
+        });
     }
 
     private sendPing(): void {
@@ -254,19 +247,5 @@ export class RTCClient {
 
     async sendFileMessage(message: Uint8Array): Promise<void> {
         return this.sendMessageToChannel(this.fileChannel, message);
-    }
-
-    on<K extends keyof RTCClientEvents>(event: K, callback: RTCClientEvents[K]): void {
-        this.eventHandlers[event].push(callback);
-    }
-
-    protected emit<K extends keyof RTCClientEvents>(event: K, ...args: Parameters<RTCClientEvents[K]> extends infer P
-        ? P extends [...unknown[]]
-        ? P
-        : never
-        : never): void {
-        for (const fn of this.eventHandlers[event]) {
-            (fn as (...a: typeof args) => void)(...args);
-        }
     }
 };

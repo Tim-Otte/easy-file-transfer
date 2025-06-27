@@ -60,7 +60,7 @@ export class PublicKeySignalingMessage {
 
 export type SignalingMessage = RegisterSignalingMessage | RegisterResultSignalingMessage | HeloSignalingMessage | IceCandidateSignalingMessage | OfferSignalingMessage | SetDescriptionSignalingMessage | PublicKeySignalingMessage;
 
-export function setupSignalingServer(wss: WebSocketServer) {
+export function setupSignalingServer(wss: WebSocketServer): void {
     const peers = new Map<string, WebSocket>();
 
     wss.on('connection', (client) => {

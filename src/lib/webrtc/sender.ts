@@ -13,7 +13,7 @@ export class RTCSender extends RTCClient {
     public initSignalingChannel(): void {
         super.initSignalingChannel();
 
-        this.signalingChannel.onReceivedRemoteDescription = async (description) => {
+        this.signalingChannel.on('receivedRemoteDescription', async (description) => {
             console.debug('Received remote description:', description);
 
             try {
@@ -24,15 +24,15 @@ export class RTCSender extends RTCClient {
             } catch (error) {
                 console.error('Error setting remote description:', error);
             }
-        }
+        });
 
-        this.signalingChannel.onHelo = () => {
+        this.signalingChannel.on('helo', () => {
             // Generate own keypair and send public key to receiver
             this.localCryptoKeypair = X25519.generateKeyPair();
             this.signalingChannel.sendPublicKey(Base64.fromUint8Array(this.localCryptoKeypair.publicKey));
-        }
+        });
 
-        this.signalingChannel.onPublicKey = (key) => {
+        this.signalingChannel.on('publicKey', (key) => {
             if (this.remotePublicKey) return;
 
             // Save the public key and generate the shared encryption keys
@@ -41,20 +41,20 @@ export class RTCSender extends RTCClient {
 
             this.encryptionKey = ChaCha20_Poly1305.generateEncryptionKey(sharedKey.sharedRx, this.sharedSecret);
             this.decryptionKey = ChaCha20_Poly1305.generateEncryptionKey(sharedKey.sharedTx, this.sharedSecret);
-        };
+        });
 
-        this.signalingChannel.onSocketOpen = () => {
+        this.signalingChannel.on('socketOpen', () => {
             console.debug('Signaling channel is open');
 
             this.isSignalingOnline = true;
             this.emit('signalingStateChanged', this.isSignalingOnline);
-        };
+        });
 
-        this.signalingChannel.onSocketClose = () => {
+        this.signalingChannel.on('socketClose', () => {
             console.debug('Signaling channel is closed');
 
             this.isSignalingOnline = false;
             this.emit('signalingStateChanged', this.isSignalingOnline);
-        };
+        });
     }
 }
