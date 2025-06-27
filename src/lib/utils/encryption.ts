@@ -8,6 +8,7 @@ export async function waitForSodium(): Promise<void> {
 
 export type KeyPair = _sodium.KeyPair;
 export type KeyExchange = _sodium.CryptoKX;
+export type HashState = _sodium.StateAddress;
 
 export class Base64 {
     static fromUint8Array(data: Uint8Array): string {
@@ -79,5 +80,19 @@ export class X25519 {
             localKeypair.privateKey,
             remotePublicKey
         );
+    }
+}
+
+export class Hashing {
+    static init(): HashState {
+        return _sodium.crypto_generichash_init(null, 16);
+    }
+
+    static update(state: HashState, data: Uint8Array): void {
+        _sodium.crypto_generichash_update(state, data);
+    }
+
+    static finalize(state: HashState): string {
+        return _sodium.to_hex(_sodium.crypto_generichash_final(state, 16));
     }
 }

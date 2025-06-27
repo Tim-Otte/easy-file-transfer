@@ -1,4 +1,5 @@
 import { COMPRESSION_ALGORITHM } from "$utils/constants";
+import { Hashing, type HashState } from "$utils/encryption";
 
 export class FileDecompressionStream {
     private stream: TransformStream<Uint8Array, Uint8Array>;
@@ -6,18 +7,20 @@ export class FileDecompressionStream {
     private reader: ReadableStreamDefaultReader<Uint8Array>;
     private compressedChunkCount = 0;
     private decompressedChunks: Uint8Array[] = [];
+    private hashingState: HashState;
 
     public compressedSize = 0;
     public decompressedSize = 0;
     public onChunkAdded: (() => void) | null = null;
 
-    public get chunkCount(): number {
-        return this.compressedChunkCount;
+    public get hash(): string {
+        return Hashing.finalize(this.hashingState);
     }
 
     constructor() {
         this.stream = new TransformStream<Uint8Array, Uint8Array>();
         this.writer = this.stream.writable.getWriter();
+        this.hashingState = Hashing.init();
         const decompressedStream = this.stream.readable.pipeThrough(new DecompressionStream(COMPRESSION_ALGORITHM));
         this.reader = decompressedStream.getReader();
         this.startReading(); // Kick off reading in background
@@ -30,6 +33,7 @@ export class FileDecompressionStream {
             if (value) {
                 this.decompressedChunks.push(value);
                 this.decompressedSize += value.length;
+                Hashing.update(this.hashingState, value);
 
                 if (this.onChunkAdded) {
                     this.onChunkAdded();

@@ -10,6 +10,7 @@
 		files: FileList;
 		currentDownload: FileDownloadData | null;
 		progress: number;
+		hashes: Record<string, string>;
 		downloadFile: (id: string) => void;
 	}
 
@@ -17,6 +18,7 @@
 		files = $bindable(),
 		progress = $bindable(),
 		currentDownload = $bindable(),
+		hashes = $bindable(),
 		downloadFile
 	}: Props = $props();
 
@@ -62,6 +64,7 @@
 		<FileQueueItem
 			{...file}
 			fileId={id}
+			hash={hashes[id]}
 			actionButton={{
 				action: downloadFile,
 				icon: Download,

@@ -20,6 +20,7 @@
 	let connectionState = $state(RTCConnectionState.New);
 	let ping = $state(0);
 	let files = $state<FileList>({});
+	let hashes = $state<Record<string, string>>({});
 	let currentDownload = $state<FileDownloadData | null>(null);
 	let currentDecompressedSize = $state(0);
 	let progress = $derived(
@@ -83,6 +84,8 @@
 					`Download complete: ${files[currentDownload!.fileId].name}, compression ratio: ${((currentDownload!.data.compressedSize / currentDownload!.data.decompressedSize) * 100).toFixed(0)}%`
 				);
 
+				hashes[currentDownload!.fileId] = currentDownload!.data.hash;
+
 				const fileData = files[currentDownload!.fileId];
 				const decompressedData = currentDownload!.data.getDecompressedData();
 				downloadFile(decompressedData, fileData.mimeType, fileData.name);
@@ -134,6 +137,7 @@
 	bind:files
 	bind:currentDownload
 	bind:progress
+	bind:hashes
 	downloadFile={requestFileDownload}
 />
 

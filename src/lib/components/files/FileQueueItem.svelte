@@ -2,7 +2,7 @@
 	import { FileIcon } from '$components';
 	import { formatSize } from '$utils/file-size';
 	import { formatSpeed } from '$utils/transfer-speed';
-	import { Gauge, type Icon as IconType } from '@lucide/svelte';
+	import { Gauge, Hash, type Icon as IconType } from '@lucide/svelte';
 	import type { ClassValue } from 'svelte/elements';
 
 	type ActionButton = {
@@ -21,6 +21,7 @@
 		progress?: number;
 		speed?: number;
 		class?: ClassValue;
+		hash?: string;
 	};
 
 	let {
@@ -31,7 +32,8 @@
 		actionButton,
 		progress,
 		speed,
-		class: itemClass
+		class: itemClass,
+		hash
 	}: Props = $props();
 </script>
 
@@ -43,10 +45,16 @@
 	<FileIcon type={mimeType} class="mr-1 text-2xl text-zinc-600 dark:text-zinc-400" />
 	<div class="min-w-0 flex-1">
 		<div class="truncate font-medium">{name}</div>
-		<div class="text-xs text-zinc-500 dark:text-zinc-400">
-			{formatSize(size)}
-			{#if speed}
-				<span class="sm:hidden"> · {formatSpeed(speed)}</span>
+		<div class={['text-xs text-zinc-500 dark:text-zinc-400', hash && 'mt-1']}>
+			{#if hash}
+				<span class="font-mono">
+					<Hash class="mr-0.5 inline size-3 align-sub" />BLAKE2b: {hash}
+				</span>
+			{:else}
+				{formatSize(size)}
+				{#if speed}
+					<span class="sm:hidden"> · {formatSpeed(speed)}</span>
+				{/if}
 			{/if}
 		</div>
 	</div>

@@ -10,12 +10,14 @@
 		files: Set<FileListItem>;
 		currentUpload: FileUploadData | null;
 		progress: number;
+		hashes: Record<string, string>;
 	}
 
 	let {
 		files = $bindable(),
 		progress = $bindable(),
-		currentUpload = $bindable()
+		currentUpload = $bindable(),
+		hashes = $bindable()
 	}: Props = $props();
 
 	let currentUploadedFile = $derived(
@@ -75,6 +77,7 @@
 			{...item.file}
 			fileId={item.id}
 			mimeType={item.file.type}
+			hash={hashes[item.id]}
 			actionButton={{
 				action: deleteFile,
 				icon: Trash,

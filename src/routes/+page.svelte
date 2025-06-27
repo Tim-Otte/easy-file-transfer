@@ -12,10 +12,11 @@
 	import { RTCConnectionState } from '$rtc/base-client';
 	import { RTCSender } from '$rtc/sender';
 	import { COMPRESSION_ALGORITHM } from '$utils/constants';
-	import { Base64, waitForSodium, X25519 } from '$utils/encryption';
+	import { Base64, Hashing, waitForSodium, X25519 } from '$utils/encryption';
 	import { onMount } from 'svelte';
 
 	let files = $state.raw(new Set<FileListItem>());
+	let hashes = $state<Record<string, string>>({});
 	let localPeer: RTCSender | null = null;
 	let shareUrl = $state<string | null>(null);
 	let connectionState = $state(RTCConnectionState.New);
@@ -87,12 +88,20 @@
 				speed: 0
 			}
 		};
+
+		const fileHash = Hashing.init();
+
 		const compressedFileReader = item.file
 			.stream()
 			.pipeThrough(
 				new TransformStream({
 					transform(chunk, controller) {
 						controller.enqueue(chunk);
+
+						// Update the hashing stream with the current chunk
+						Hashing.update(fileHash, chunk);
+
+						// Update the progress and speed
 						currentUpload!.sentBytes += chunk.byteLength;
 
 						const timeSinceLastUpdate = Date.now() - currentUpload!.speed.lastUpdate;
@@ -126,6 +135,8 @@
 			}
 		} while (true);
 
+		hashes[item.id] = Hashing.finalize(fileHash);
+
 		currentUpload = null;
 	};
 
@@ -144,6 +155,6 @@
 </PageHeader>
 
 <FileUpload bind:files />
-<FileUploadQueue bind:files bind:currentUpload bind:progress />
+<FileUploadQueue bind:files bind:currentUpload bind:progress bind:hashes />
 
 <RtcClientStatus status={connectionState} {ping} />
