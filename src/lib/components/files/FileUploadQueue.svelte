@@ -54,7 +54,10 @@
 	<h3 class="mt-8 flex flex-col items-baseline text-xl font-semibold sm:flex-row">
 		<span class="font-[Space_Grotesk]">{m.upload_queue_title()}</span>
 		<span
-			class={['text-xs text-zinc-500 sm:ml-2 dark:text-zinc-400', !filesInQueue.length && 'hidden']}
+			class={[
+				'text-xs text-neutral-500 sm:ml-2 dark:text-neutral-400',
+				!filesInQueue.length && 'hidden'
+			]}
 		>
 			{m.upload_queue_subtitle({
 				fileCount: filesInQueue.length,
@@ -63,7 +66,7 @@
 		>
 	</h3>
 	<button
-		class={`cursor-pointer rounded px-3 py-1 text-red-500 transition-colors duration-400 hover:not-disabled:bg-zinc-200 disabled:cursor-not-allowed disabled:bg-zinc-200 disabled:text-zinc-400 hover:not-disabled:dark:bg-zinc-700 disabled:dark:bg-zinc-700 disabled:dark:text-zinc-900`}
+		class={`cursor-pointer rounded px-3 py-1 text-red-500 transition-colors duration-400 hover:not-disabled:bg-neutral-200 disabled:cursor-not-allowed disabled:bg-neutral-200 disabled:text-neutral-400 hover:not-disabled:dark:bg-neutral-700 disabled:dark:bg-neutral-700 disabled:dark:text-neutral-900`}
 		onclick={() => (files = new Set())}
 		disabled={files.size === 0 || currentUpload !== null}
 		aria-label="Clear upload queue"
@@ -86,7 +89,7 @@
 			}}
 		/>
 	{:else}
-		<div class="text-zinc-500 dark:text-zinc-400 text-sm">
+		<div class="text-neutral-500 dark:text-neutral-400 text-sm">
 			{m.upload_queue_empty()}
 		</div>
 	{/each}

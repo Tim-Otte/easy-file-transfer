@@ -58,7 +58,9 @@
 			}
 		}
 	],
-	"ping": "Ping: {ping} ms",
+	"ping": "{ping} ms",
+	"p2p_ping_tooltip": "Ping P2P connection",
+	"signaling_ping_tooltip": "Ping server connection",
 	"currently_downloading": "Current download",
 	"download_queue_title": "Download queue",
 	"download_queue_subtitle": [

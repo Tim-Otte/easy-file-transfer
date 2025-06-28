@@ -18,7 +18,8 @@
 	let localPeer: RTCReceiver | null;
 	let remotePeerId = $state<string | null>(null);
 	let connectionState = $state(RTCConnectionState.New);
-	let ping = $state(0);
+	let p2pPing = $state(0);
+	let signalingPing = $state(0);
 	let files = $state<FileList>({});
 	let hashes = $state<Record<string, string>>({});
 	let currentDownload = $state<FileDownloadData | null>(null);
@@ -32,7 +33,8 @@
 
 		localPeer = new RTCReceiver(peerId, Base64.toUint8Array(sharedSecret));
 		localPeer.on('connectionStateChanged', (state) => (connectionState = state));
-		localPeer.on('ping', (latency) => (ping = latency));
+		localPeer.on('ping', (latency) => (p2pPing = latency));
+		localPeer.on('signalingPing', (latency) => (signalingPing = latency));
 		localPeer.on('controlMessage', async (message: string) => {
 			try {
 				const msg = JSON.parse(message) as FileTransferMessage;
@@ -141,4 +143,4 @@
 	downloadFile={requestFileDownload}
 />
 
-<RtcClientStatus status={connectionState} {ping} />
+<RtcClientStatus status={connectionState} {p2pPing} {signalingPing} />

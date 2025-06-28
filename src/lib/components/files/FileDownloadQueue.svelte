@@ -50,7 +50,10 @@
 	<h3 class="mt-8 text-xl font-semibold">
 		<span class="font-[Space_Grotesk]">{m.download_queue_title()}</span>
 		<span
-			class={['ml-1 text-xs text-zinc-500 dark:text-zinc-400', !filesInQueue.length && 'hidden']}
+			class={[
+				'ml-1 text-xs text-neutral-500 dark:text-neutral-400',
+				!filesInQueue.length && 'hidden'
+			]}
 		>
 			{m.download_queue_subtitle({
 				fileCount: filesInQueue.length,
@@ -73,7 +76,7 @@
 			}}
 		/>
 	{:else}
-		<div class="text-zinc-500 dark:text-zinc-400 text-sm">
+		<div class="text-neutral-500 dark:text-neutral-400 text-sm">
 			{m.download_queue_empty()}
 		</div>
 	{/each}

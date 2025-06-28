@@ -1,64 +1,5 @@
 import { WebSocket, WebSocketServer } from 'ws';
-
-export class RegisterSignalingMessage {
-    type = 'register' as const;
-    constructor(
-        public id: string
-    ) { }
-}
-
-export class RegisterResultSignalingMessage {
-    type = 'register-result' as const;
-    constructor(
-        public success: boolean
-    ) { }
-}
-
-export class HeloSignalingMessage {
-    type = 'helo' as const;
-    constructor(
-        public from: string,
-        public to: string
-    ) { }
-}
-
-export class IceCandidateSignalingMessage {
-    type = 'ice-candidate' as const;
-    constructor(
-        public from: string,
-        public to: string,
-        public candidate: RTCIceCandidateInit
-    ) { }
-}
-
-export class OfferSignalingMessage {
-    type = 'offer' as const;
-    constructor(
-        public from: string,
-        public to: string,
-        public offer: RTCSessionDescriptionInit
-    ) { }
-}
-
-export class SetDescriptionSignalingMessage {
-    type = 'set-description' as const;
-    constructor(
-        public from: string,
-        public to: string,
-        public description: RTCSessionDescription
-    ) { }
-}
-
-export class PublicKeySignalingMessage {
-    type = 'public-key' as const;
-    constructor(
-        public from: string,
-        public to: string,
-        public key: string
-    ) { }
-}
-
-export type SignalingMessage = RegisterSignalingMessage | RegisterResultSignalingMessage | HeloSignalingMessage | IceCandidateSignalingMessage | OfferSignalingMessage | SetDescriptionSignalingMessage | PublicKeySignalingMessage;
+import { RegisterResultSignalingMessage, type SignalingMessage } from './messages';
 
 export function setupSignalingServer(wss: WebSocketServer): void {
     const peers = new Map<string, WebSocket>();
@@ -84,22 +25,14 @@ export function setupSignalingServer(wss: WebSocketServer): void {
                         peers.get(message.to)?.send(data.toString());
                     }
                 }
-                else if (message.type === 'offer') {
-                    if (peers.has(message.to)) {
-                        peers.get(message.to)?.send(data.toString());
-                    }
-                }
-                else if (message.type === 'ice-candidate') {
-                    if (peers.has(message.to)) {
-                        peers.get(message.to)?.send(data.toString());
-                    }
-                }
-                else if (message.type === 'set-description') {
-                    if (peers.has(message.to)) {
-                        peers.get(message.to)?.send(data.toString());
-                    }
-                }
-                else if (message.type === 'public-key') {
+                else if (
+                    message.type === 'ping' ||
+                    message.type === 'pong' ||
+                    message.type === 'offer' ||
+                    message.type === 'ice-candidate' ||
+                    message.type === 'set-description' ||
+                    message.type === 'public-key'
+                ) {
                     if (peers.has(message.to)) {
                         peers.get(message.to)?.send(data.toString());
                     }

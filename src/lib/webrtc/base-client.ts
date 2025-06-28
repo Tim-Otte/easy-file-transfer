@@ -1,4 +1,4 @@
-import { CONTROL_CHANNEL_LABEL, FILE_CHANNEL_LABEL, PING_TIMEOUT } from "$utils/constants";
+import { CONTROL_CHANNEL_LABEL, FILE_CHANNEL_LABEL, PING_TIMEOUT, SIGNALING_CHANNEL_RECONNECT_TIMEOUT } from "$utils/constants";
 import { ChaCha20_Poly1305, type KeyPair } from "$utils/encryption";
 import { EventEmitter } from "$utils/event-emitter";
 import { SignalingClient } from "./signaling-client";
@@ -17,6 +17,7 @@ interface RTCClientEvents {
     signalingStateChanged: (isOnline: boolean) => void;
     connectionStateChanged: (state: RTCConnectionState) => void;
     ping: (latency: number) => void;
+    signalingPing: (latency: number) => void;
     controlMessage: (message: string) => void;
     fileMessage: (data: Uint8Array) => void;
 };
@@ -197,6 +198,16 @@ export class RTCClient extends EventEmitter<RTCClientEvents> {
                 this.connection.addIceCandidate(candidate);
             }
         });
+
+        this.signalingChannel.on('socketClose', () => {
+            setTimeout(
+                (signalingChannel) => signalingChannel.connect(),
+                SIGNALING_CHANNEL_RECONNECT_TIMEOUT,
+                this.signalingChannel
+            );
+        });
+
+        this.signalingChannel.on('ping', (latency) => this.emit('signalingPing', latency));
     }
 
     private sendPing(): void {

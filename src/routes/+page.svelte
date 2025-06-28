@@ -20,7 +20,8 @@
 	let localPeer: RTCSender | null = null;
 	let shareUrl = $state<string | null>(null);
 	let connectionState = $state(RTCConnectionState.New);
-	let ping = $state(0);
+	let p2pPing = $state(0);
+	let signalingPing = $state(0);
 	let currentUpload = $state<FileUploadData | null>(null);
 	let progress = $derived(
 		currentUpload
@@ -49,7 +50,8 @@
 				: null;
 		});
 		localPeer.on('connectionStateChanged', (state) => (connectionState = state));
-		localPeer.on('ping', (latency) => (ping = latency));
+		localPeer.on('ping', (latency) => (p2pPing = latency));
+		localPeer.on('signalingPing', (latency) => (signalingPing = latency));
 		localPeer.on('controlMessage', (message: string) => {
 			try {
 				const msg = JSON.parse(message) as FileTransferMessage;
@@ -157,4 +159,4 @@
 <FileUpload bind:files />
 <FileUploadQueue bind:files bind:currentUpload bind:progress bind:hashes />
 
-<RtcClientStatus status={connectionState} {ping} />
+<RtcClientStatus status={connectionState} {p2pPing} {signalingPing} />

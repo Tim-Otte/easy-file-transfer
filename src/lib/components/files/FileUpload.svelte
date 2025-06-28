@@ -62,8 +62,8 @@
 <div
 	class={`relative flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 p-4 py-6 transition-all duration-400 sm:p-8 ${
 		dragActive
-			? 'border-blue-500 bg-zinc-100 dark:border-blue-600 dark:bg-zinc-800'
-			: 'border-zinc-400 bg-zinc-200 hover:border-blue-600 dark:border-zinc-700 dark:bg-zinc-900 hover:dark:border-blue-800'
+			? 'border-blue-500 bg-neutral-100 dark:border-blue-600 dark:bg-neutral-800'
+			: 'border-neutral-400 bg-neutral-200 hover:border-blue-600 dark:border-neutral-700 dark:bg-neutral-900 hover:dark:border-blue-800'
 	}`}
 	tabindex="0"
 	role="button"
@@ -96,6 +96,6 @@
 				{m.dropzone_title({ dragActive, mobile: true })}
 			</span>
 		</div>
-		<div class="text-sm text-zinc-500 dark:text-zinc-400">{m.dropzone_subtitle()}</div>
+		<div class="text-sm text-neutral-500 dark:text-neutral-400">{m.dropzone_subtitle()}</div>
 	</div>
 </div>
