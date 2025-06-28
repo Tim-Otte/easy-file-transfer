@@ -1,5 +1,5 @@
 import { WebSocket, WebSocketServer } from 'ws';
-import { RegisterResultSignalingMessage, type SignalingMessage } from './messages';
+import { RegisterResultSignalingMessage, type SignalingMessage } from './messages.js';
 
 export function setupSignalingServer(wss: WebSocketServer): void {
     const peers = new Map<string, WebSocket>();
