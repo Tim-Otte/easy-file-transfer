@@ -47,6 +47,7 @@
 		]
 	},
 	"dependencies": {
+		"@floating-ui/dom": "^1.7.2",
 		"@inlang/paraglide-js": "^2.0.0",
 		"@lucide/svelte": "^0.513.0",
 		"express": "^5.1.0",

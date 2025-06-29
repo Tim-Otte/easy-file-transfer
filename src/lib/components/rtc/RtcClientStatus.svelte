@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { RtcClientStatusIcon } from '$components';
-	import Tooltip from '$components/Tooltip.svelte';
 	import { m } from '$messages';
 	import { RTCConnectionState } from '$rtc/base-client';
+	import { tooltip } from '$utils/tooltip.svelte';
 	import { ChevronsLeftRightEllipsis, Router, type Icon as IconType } from '@lucide/svelte';
 
 	type Props = {
@@ -32,17 +32,16 @@
 	};
 </script>
 
-{#snippet pingItem(icon: typeof IconType, ping: number, tooltip: string)}
+{#snippet pingItem(icon: typeof IconType, ping: number, hint: string)}
 	{@const PingIcon = icon}
 
-	<Tooltip text={tooltip}>
-		<div
-			class="flex h-6 min-w-20 items-center justify-between rounded-sm bg-neutral-200 px-2 text-neutral-800 dark:bg-neutral-400/80 dark:text-neutral-900"
-		>
-			<PingIcon class="inline size-3.5" strokeWidth="2.5" />
-			<span class="font-mono">{m.ping({ ping })}</span>
-		</div>
-	</Tooltip>
+	<div
+		class="flex h-6 min-w-20 cursor-default items-center justify-between rounded-sm bg-neutral-200 px-2 text-neutral-800 dark:bg-neutral-400/80 dark:text-neutral-900"
+		use:tooltip={{ content: hint, allowHTML: true, placement: 'top' }}
+	>
+		<PingIcon class="inline size-3.5" strokeWidth="2.5" />
+		<span class="font-mono">{m.ping({ ping })}</span>
+	</div>
 {/snippet}
 
 <div

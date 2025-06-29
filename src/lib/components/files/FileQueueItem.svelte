@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { FileIcon } from '$components';
+	import { m } from '$messages';
 	import { formatSize } from '$utils/file-size';
+	import { tooltip } from '$utils/tooltip.svelte';
 	import { formatSpeed } from '$utils/transfer-speed';
 	import { Gauge, Hash, Save, type Icon as IconType } from '@lucide/svelte';
 	import type { ClassValue } from 'svelte/elements';
@@ -10,6 +12,7 @@
 		icon: typeof IconType;
 		class: ClassValue;
 		disabled?: boolean;
+		tooltip: string;
 	};
 
 	type Props = {
@@ -40,15 +43,17 @@
 {#snippet badge(
 	icon: typeof IconType,
 	text: string,
+	badgeTooltip: string,
 	badgeClass?: ClassValue,
 	textClass?: ClassValue
 )}
 	{@const BadgeIcon = icon}
 	<div
 		class={[
-			'flex items-center gap-1 overflow-hidden rounded bg-neutral-200 px-1 py-0.5 whitespace-nowrap text-neutral-800 sm:gap-1.5 sm:rounded-full sm:px-3 sm:py-1.5 dark:bg-neutral-600 dark:text-neutral-200',
+			'flex cursor-default items-center gap-1 overflow-hidden rounded bg-neutral-200 px-1 py-0.5 whitespace-nowrap text-neutral-800 sm:gap-1.5 sm:rounded-full sm:px-3 sm:py-1.5 dark:bg-neutral-600 dark:text-neutral-200',
 			badgeClass
 		]}
+		use:tooltip={badgeTooltip}
 	>
 		<BadgeIcon
 			class="inline size-3 text-neutral-700 sm:size-4 dark:text-neutral-300"
@@ -69,12 +74,12 @@
 		<div
 			class="flex items-center gap-1 overflow-hidden text-xs/tight text-neutral-500 sm:ml-8 sm:gap-3 dark:text-neutral-400"
 		>
-			{@render badge(Save, formatSize(size), hash && 'not-sm:hidden')}
+			{@render badge(Save, formatSize(size), m.file_size(), hash && 'not-sm:hidden')}
 			{#if speed}
-				{@render badge(Gauge, formatSpeed(speed), 'sm:hidden')}
+				{@render badge(Gauge, formatSpeed(speed), m.transfer_speed(), 'sm:hidden')}
 			{/if}
 			{#if hash}
-				{@render badge(Hash, hash, undefined, 'truncate font-mono')}
+				{@render badge(Hash, hash, m.hash(), undefined, 'truncate font-mono')}
 			{/if}
 		</div>
 	</div>
@@ -102,6 +107,7 @@
 			onclick={() => actionButton.action(fileId)}
 			disabled={actionButton.disabled}
 			aria-label="Download file"
+			use:tooltip={{ content: actionButton.tooltip, placement: 'left' }}
 		>
 			<svelte:boundary>
 				{@const ActionIcon = actionButton.icon}

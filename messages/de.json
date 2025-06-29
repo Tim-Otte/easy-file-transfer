@@ -1,5 +1,21 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"share_url": "Link teilen",
+	"share_url_text": "Teile diese URL mit anderen, damit sie die Dateien herunterladen können:",
+	"copy_share_url_tooltip": [
+		{
+			"declarations": [
+				"input isMobile"
+			],
+			"selectors": [
+				"isMobile"
+			],
+			"match": {
+				"isMobile=0": "Copy URL to clipboard",
+				"isMobile=1": "Share URL"
+			}
+		}
+	],
 	"dropzone_title": [
 		{
 			"declarations": [
@@ -38,7 +54,9 @@
 		}
 	],
 	"clear_upload_queue": "Leeren",
+	"clear_upload_queue_tooltip": "Upload-Warteschlange leeren",
 	"upload_queue_empty": "Die Upload-Warteschlange ist leer.",
+	"remove_file_tooltip": "Datei aus der Warteschlange entfernen",
 	"rtc_status": [
 		{
 			"declarations": [
@@ -59,8 +77,8 @@
 		}
 	],
 	"ping": "{ping} ms",
-	"p2p_ping_tooltip": "Ping P2P-Verbindung",
-	"signaling_ping_tooltip": "Ping Server-Verbindung",
+	"p2p_ping_tooltip": "<b>Ping:</b> P2P-Verbindung",
+	"signaling_ping_tooltip": "<b>Ping:</b> Server-Verbindung",
 	"currently_downloading": "Aktueller Download",
 	"download_queue_title": "Download Warteschlange",
 	"download_queue_subtitle": [
@@ -81,6 +99,8 @@
 		}
 	],
 	"download_queue_empty": "Die Download-Warteschlange ist leer.",
-	"share_url": "Link teilen",
-	"share_url_text": "Teile diese URL mit anderen, damit sie die Dateien herunterladen können:"
+	"download_file_tooltip": "Datei herunterladen",
+	"file_size": "File size",
+	"transfer_speed": "Transfer speed",
+	"hash": "BLAKE2b Hash"
 }

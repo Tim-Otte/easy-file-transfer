@@ -4,6 +4,7 @@
 	import type { FileUploadData } from '$filetransfer/helper-types';
 	import { m } from '$messages';
 	import { formatSize } from '$utils/file-size.js';
+	import { tooltip } from '$utils/tooltip.svelte';
 	import { Trash } from '@lucide/svelte';
 
 	interface Props {
@@ -69,7 +70,8 @@
 		class={`cursor-pointer rounded px-3 py-1 text-red-500 transition-colors duration-400 hover:not-disabled:bg-neutral-200 disabled:cursor-not-allowed disabled:bg-neutral-200 disabled:text-neutral-400 hover:not-disabled:dark:bg-neutral-700 disabled:dark:bg-neutral-700 disabled:dark:text-neutral-900`}
 		onclick={() => (files = new Set())}
 		disabled={files.size === 0 || currentUpload !== null}
-		aria-label="Clear upload queue"
+		aria-label={m.clear_upload_queue_tooltip()}
+		use:tooltip={{ content: m.clear_upload_queue_tooltip(), placement: 'left' }}
 	>
 		{m.clear_upload_queue()}
 	</button>
@@ -85,7 +87,8 @@
 				action: deleteFile,
 				icon: Trash,
 				class: 'text-red-500',
-				disabled: currentUpload !== null
+				disabled: currentUpload !== null,
+				tooltip: m.remove_file_tooltip()
 			}}
 		/>
 	{:else}

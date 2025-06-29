@@ -72,7 +72,8 @@
 				action: downloadFile,
 				icon: Download,
 				class: 'text-green-700 dark:text-green-500',
-				disabled: currentDownload !== null
+				disabled: currentDownload !== null,
+				tooltip: m.download_file_tooltip()
 			}}
 		/>
 	{:else}

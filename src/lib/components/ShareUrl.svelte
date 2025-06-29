@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { m } from '$messages';
 	import { isMobile } from '$utils/mobile-check';
+	import { tooltip } from '$utils/tooltip.svelte';
 	import { Check, Copy, Loader2, Share2 } from '@lucide/svelte';
 
 	interface Props {
@@ -55,6 +56,12 @@
 		onclick={onCopyUrlClick}
 		disabled={!url}
 		aria-label="Copy share URL"
+		use:tooltip={{
+			content: m.copy_share_url_tooltip({
+				isMobile: isMobile() && typeof navigator.share === 'function'
+			}),
+			delay: 500
+		}}
 	>
 		{#if url}
 			{#if showCopyUrlSuccess}

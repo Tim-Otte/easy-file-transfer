@@ -12,7 +12,7 @@
 </script>
 
 <div class="mb-5 flex flex-row items-center justify-between font-[Space_Grotesk]">
-	<h1 class="text-xl font-bold">
+	<h1 class="text-2xl font-bold">
 		<Send
 			size="35"
 			strokeWidth="1.5"
