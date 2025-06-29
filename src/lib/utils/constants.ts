@@ -16,7 +16,7 @@ const FILE_CHANNEL_LABEL = 'fileChannel';
 /**
  * Time (in ms) to wait between pings
  */
-const PING_TIMEOUT = 1000;
+const PING_TIMEOUT = 1500;
 
 /**
  * Timeout (in ms) for reconnecting the signaling channel

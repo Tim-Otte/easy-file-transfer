@@ -77,8 +77,10 @@ export class SignalingClient extends EventEmitter<SignalingClientEvents> {
                 else if (message.type === 'public-key') {
                     if (!this.remoteId) {
                         this.remoteId = message.from;
-                        this.send(new PingSignalingMessage(this.localId, this.remoteId));
                     }
+
+                    // Send the first ping after receiving the public key
+                    this.sendPing();
 
                     this.emit('publicKey', message.key);
                 }
